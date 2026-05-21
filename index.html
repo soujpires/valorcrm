@@ -1177,24 +1177,40 @@ function openNewLeadInCol(colId){
   fComm.addEventListener('input',updC); fVal.addEventListener('input',updC);
   crow.appendChild(fComm); crow.appendChild(cdisp); cg.appendChild(crow); body.appendChild(cg);
 
-  // Repasse Vendedor
+  // Repasse toggle checkbox
+  const repTogNL=el('div','fw'); repTogNL.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;';
+  const repChkNL=document.createElement('input'); repChkNL.type='checkbox'; repChkNL.id='rep-toggle-nl'; repChkNL.style.cssText='width:15px;height:15px;accent-color:#7C3AED;cursor:pointer;';
+  const repChkNLLbl=el('label'); repChkNLLbl.htmlFor='rep-toggle-nl'; repChkNLLbl.style.cssText='font-size:13px;font-weight:600;color:#7C3AED;cursor:pointer;';
+  repChkNLLbl.textContent='💸 Há repasse neste negócio';
+  repTogNL.appendChild(repChkNL); repTogNL.appendChild(repChkNLLbl); body.appendChild(repTogNL);
+
+  // Repasse Vendedor — hidden by default
   const rvg=el('div','fw'); rvg.appendChild(el('label','lbl','% Repasse Vendedor'));
   const rvrow=el('div'); rvrow.style.cssText='display:flex;align-items:center;gap:8px;';
   const fRepVend2=mkI('0','number','0'); fRepVend2.style.width='90px'; fRepVend2.style.display='inline-block'; fRepVend2.min='0'; fRepVend2.max='100'; fRepVend2.step='0.5';
   const rvdisp=el('span',''); rvdisp.style.cssText='font-size:13px;color:#6B7280;'; const rvval=el('span','',fmt(0)); rvval.style.cssText='color:#7C3AED;font-weight:600;'; rvdisp.appendChild(document.createTextNode('% = ')); rvdisp.appendChild(rvval);
   fRepVend2.addEventListener('input',updC);
-  rvrow.appendChild(fRepVend2); rvrow.appendChild(rvdisp); rvg.appendChild(rvrow); body.appendChild(rvg);
+  rvrow.appendChild(fRepVend2); rvrow.appendChild(rvdisp); rvg.appendChild(rvrow);
+  rvg.style.display='none'; body.appendChild(rvg);
 
-  // Repasse Produtor (admin only)
-  let fRepProd2, rpval;
+  // Repasse Produtor (admin only) — hidden by default
+  let fRepProd2, rpval, rpg;
   if(currentRole==='admin'){
-    const rpg=el('div','fw'); rpg.appendChild(el('label','lbl','% Repasse Produtor'));
+    rpg=el('div','fw'); rpg.appendChild(el('label','lbl','% Repasse Produtor'));
     const rprow=el('div'); rprow.style.cssText='display:flex;align-items:center;gap:8px;';
     fRepProd2=mkI('0','number','0'); fRepProd2.style.width='90px'; fRepProd2.style.display='inline-block'; fRepProd2.min='0'; fRepProd2.max='100'; fRepProd2.step='0.5';
     const rpdisp=el('span',''); rpdisp.style.cssText='font-size:13px;color:#6B7280;'; rpval=el('span','',fmt(0)); rpval.style.cssText='color:#D97706;font-weight:600;'; rpdisp.appendChild(document.createTextNode('% = ')); rpdisp.appendChild(rpval);
     fRepProd2.addEventListener('input',updC);
-    rprow.appendChild(fRepProd2); rprow.appendChild(rpdisp); rpg.appendChild(rprow); body.appendChild(rpg);
+    rprow.appendChild(fRepProd2); rprow.appendChild(rpdisp); rpg.appendChild(rprow);
+    rpg.style.display='none'; body.appendChild(rpg);
   }
+
+  // Toggle show/hide repasse fields
+  repChkNL.addEventListener('change',()=>{
+    rvg.style.display=repChkNL.checked?'block':'none';
+    if(rpg) rpg.style.display=repChkNL.checked?'block':'none';
+    if(!repChkNL.checked){ fRepVend2.value='0'; if(fRepProd2) fRepProd2.value='0'; updC(); }
+  });
   // obs as textarea
   const og=el('div','fw'); og.appendChild(el('label','lbl','Questionário de Risco'));
   // Insurance type field
