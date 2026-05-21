@@ -656,25 +656,22 @@ function buildCard(l, accentColor){
     card.appendChild(tw);
   }
   // Value / repasse on card
+  const repVend=calcComm(calcComm(l.value,l.commPct),l.repVendPct||0);
+  card.appendChild(el('div','card-val',fmt(l.value)));
   if(currentRole==='admin'){
-    const repVend=calcComm(calcComm(l.value,l.commPct),l.repVendPct||0);
-    const cardValEl=el('div','card-val',fmt(l.value));
-    card.appendChild(cardValEl);
-    if(l.repVendPct>0){
+    // Admin: mostra comissão normal + repasse se houver
+    const comm=el('div','card-comm'); comm.appendChild(document.createTextNode(fmt(calcComm(l.value,l.commPct))+' ')); comm.appendChild(el('span','cpill',pctD+'%')); card.appendChild(comm);
+    if((l.repVendPct||0)>0){
       const repEl=el('div'); repEl.style.cssText='font-size:11px;color:#7C3AED;font-weight:600;margin-left:10px;margin-bottom:4px;';
       repEl.textContent=`Rep. ${fmt(repVend)} (${l.repVendPct}%)`;
       card.appendChild(repEl);
     }
   } else {
-    // Nalberty — mostra repasse dele
-    const repVend=calcComm(calcComm(l.value,l.commPct),l.repVendPct||0);
-    const cardValEl=el('div','card-val',fmt(l.value));
-    card.appendChild(cardValEl);
-    const repEl=el('div'); repEl.style.cssText='font-size:11px;color:#7C3AED;font-weight:600;margin-left:10px;margin-bottom:4px;';
-    repEl.textContent=repVend>0?`Meu repasse: ${fmt(repVend)}`:'Repasse: —';
+    // Nalberty: mostra só repasse dele em roxo
+    const repEl=el('div'); repEl.style.cssText='font-size:12px;color:#7C3AED;font-weight:600;margin-left:10px;margin-bottom:4px;';
+    repEl.textContent=repVend>0?`Repasse: ${fmt(repVend)} (${l.repVendPct}%)`:'Sem repasse definido';
     card.appendChild(repEl);
   }
-  const comm=el('div','card-comm'); comm.appendChild(document.createTextNode(fmt(calcComm(l.value,l.commPct))+' ')); comm.appendChild(el('span','cpill',pctD+'%')); card.appendChild(comm);
   const foot=el('div','card-foot');
   const pw=el('div','pbar-wrap'); const pb=el('div','pbar'); const pf=el('div','pfill'); pf.style.width=pct+'%'; pf.style.background=fc; pb.appendChild(pf); pw.appendChild(pb); pw.appendChild(el('div','ptxt',`${done}/${tot} tarefas`)); foot.appendChild(pw);
   foot.appendChild(el('div','card-pct',pct+'%'));
@@ -961,12 +958,11 @@ function buildLeadModal(l){
   grid.appendChild(repToggleWrap);
 
   // Repasse fields container
-  const repasseFields=el('div'); repasseFields.style.cssText=`display:${hasRepasse?'contents':'none'};`;
-  grid.appendChild(repasseFields);
-
   repChk.addEventListener('change',()=>{
-    repasseFields.style.display=repChk.checked?'contents':'none';
-    if(!repChk.checked){ if(fRepVend) fRepVend.value='0'; if(fRepProd) fRepProd.value='0'; updComm(); }
+    const show=repChk.checked;
+    repVendField.style.display=show?'block':'none';
+    if(repProdField) repProdField.style.display=show?'block':'none';
+    if(!show){ if(fRepVend) fRepVend.value='0'; if(fRepProd) fRepProd.value='0'; updComm(); }
   });
 
   // Repasse Vendedor
@@ -977,19 +973,24 @@ function buildLeadModal(l){
   repVendLbl.appendChild(document.createTextNode(' % = ')); repVendLbl.appendChild(repVendVal);
   if(!ed) fRepVend.readOnly=true;
   repVendWrap.appendChild(fRepVend); repVendWrap.appendChild(repVendLbl);
-  repasseFields.appendChild(makeField('% Repasse Vendedor',repVendWrap));
+  // Repasse fields — aparecem/somem com o toggle
+  const repVendField=makeField('% Repasse Vendedor',repVendWrap);
+  repVendField.style.display=hasRepasse?'block':'none';
+  grid.appendChild(repVendField);
   fRepVend.addEventListener('input',updComm);
 
   // Repasse Produtor (admin only)
   const repProdPct=Number(l.repProdPct||0);
-  let fRepProd, repProdVal;
+  let fRepProd, repProdVal, repProdField;
   if(currentRole==='admin'){
     const repProdWrap=el('div'); fRepProd=makeInp(repProdPct,'number'); fRepProd.style.width='55px'; fRepProd.min='0'; fRepProd.max='100'; fRepProd.step='0.5';
     const repProdLbl=el('span',''); repProdLbl.style.cssText='font-size:12px;color:#6B7280;';
     repProdVal=el('span','',fmt(calcComm(calcComm(l.value,commPct),repProdPct))); repProdVal.style.cssText='color:#D97706;font-weight:600;';
     repProdLbl.appendChild(document.createTextNode(' % = ')); repProdLbl.appendChild(repProdVal);
     repProdWrap.appendChild(fRepProd); repProdWrap.appendChild(repProdLbl);
-    repasseFields.appendChild(makeField('% Repasse Produtor',repProdWrap));
+    repProdField=makeField('% Repasse Produtor',repProdWrap);
+    repProdField.style.display=hasRepasse?'block':'none';
+    grid.appendChild(repProdField);
     fRepProd.addEventListener('input',updComm);
   }
   const fQty=makeInp(l.qty||1,'number'); grid.appendChild(makeField('Quantidade',fQty));
