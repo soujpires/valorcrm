@@ -284,9 +284,11 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:#F3F4F6;color:
         <span class="atag" id="hdr-admin" style="display:none">Admin</span>
       </div>
       <div class="vtabs" id="view-tabs" style="display:none">
-        <button class="vtab active" data-view="all">Todos</button>
-        <button class="vtab" data-view="mine">Meus</button>
-        <button class="vtab" data-view="nalberty">Nalberty</button>
+        <select id="view-select" class="stage-sel" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid #E5E7EB;background:#fff;color:#111827;font-family:'DM Sans',sans-serif;cursor:pointer;">
+          <option value="all">👥 Todos</option>
+          <option value="mine">🙋 Meus</option>
+          <option value="nalberty">👤 Nalberty</option>
+        </select>
       </div>
       <button class="ibtn" id="search-btn" title="Buscar"><i class="ti ti-search"></i></button>
       <div id="search-wrap" style="display:none;align-items:center;gap:6px;">
@@ -462,7 +464,7 @@ function doLogin(){
   document.getElementById('app').style.display='flex';
   const av=document.getElementById('hdr-av'); av.textContent=user.init; av.style.background=user.bg; av.style.color=user.color;
   document.getElementById('hdr-name').textContent=user.name;
-  if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; }
+  if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; document.getElementById('view-select').value=viewFilter; }
   if(autoRefreshTimer) clearInterval(autoRefreshTimer);
   loadAndRender().then(()=>{
     autoRefreshTimer=setInterval(async()=>{
@@ -510,10 +512,9 @@ document.getElementById('sidebar').addEventListener('click', e=>{
 });
 
 // ── VIEW FILTER ──
-document.getElementById('view-tabs').addEventListener('click', e=>{
-  const btn=e.target.closest('[data-view]'); if(!btn) return;
-  viewFilter=btn.dataset.view;
-  document.querySelectorAll('.vtab').forEach(b=>b.classList.toggle('active',b.dataset.view===viewFilter));
+document.getElementById('view-tabs').addEventListener('change', e=>{
+  if(e.target.id!=='view-select') return;
+  viewFilter=e.target.value;
   renderAll();
 });
 function visibleLeads(){
@@ -654,7 +655,25 @@ function buildCard(l, accentColor){
     });
     card.appendChild(tw);
   }
-  card.appendChild(el('div','card-val',fmt(l.value)));
+  // Value / repasse on card
+  if(currentRole==='admin'){
+    const repVend=calcComm(calcComm(l.value,l.commPct),l.repVendPct||0);
+    const cardValEl=el('div','card-val',fmt(l.value));
+    card.appendChild(cardValEl);
+    if(l.repVendPct>0){
+      const repEl=el('div'); repEl.style.cssText='font-size:11px;color:#7C3AED;font-weight:600;margin-left:10px;margin-bottom:4px;';
+      repEl.textContent=`Rep. ${fmt(repVend)} (${l.repVendPct}%)`;
+      card.appendChild(repEl);
+    }
+  } else {
+    // Nalberty — mostra repasse dele
+    const repVend=calcComm(calcComm(l.value,l.commPct),l.repVendPct||0);
+    const cardValEl=el('div','card-val',fmt(l.value));
+    card.appendChild(cardValEl);
+    const repEl=el('div'); repEl.style.cssText='font-size:11px;color:#7C3AED;font-weight:600;margin-left:10px;margin-bottom:4px;';
+    repEl.textContent=repVend>0?`Meu repasse: ${fmt(repVend)}`:'Repasse: —';
+    card.appendChild(repEl);
+  }
   const comm=el('div','card-comm'); comm.appendChild(document.createTextNode(fmt(calcComm(l.value,l.commPct))+' ')); comm.appendChild(el('span','cpill',pctD+'%')); card.appendChild(comm);
   const foot=el('div','card-foot');
   const pw=el('div','pbar-wrap'); const pb=el('div','pbar'); const pf=el('div','pfill'); pf.style.width=pct+'%'; pf.style.background=fc; pb.appendChild(pf); pw.appendChild(pb); pw.appendChild(el('div','ptxt',`${done}/${tot} tarefas`)); foot.appendChild(pw);
@@ -932,6 +951,24 @@ function buildLeadModal(l){
   fComm.addEventListener('input',updComm); fValue.addEventListener('input',updComm);
   commWrap.appendChild(fComm); commWrap.appendChild(commLbl); grid.appendChild(makeField('% Comissão',commWrap));
 
+  // Repasse toggle checkbox
+  const hasRepasse=(l.repVendPct||0)>0||(l.repProdPct||0)>0;
+  const repToggleWrap=el('div'); repToggleWrap.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;grid-column:1/-1;';
+  const repChk=document.createElement('input'); repChk.type='checkbox'; repChk.id='rep-toggle-chk'; repChk.checked=hasRepasse; repChk.style.cssText='width:15px;height:15px;accent-color:#7C3AED;cursor:pointer;';
+  const repChkLbl=el('label'); repChkLbl.htmlFor='rep-toggle-chk'; repChkLbl.style.cssText='font-size:12px;font-weight:600;color:#7C3AED;cursor:pointer;';
+  repChkLbl.textContent='💸 Há repasse neste negócio';
+  repToggleWrap.appendChild(repChk); repToggleWrap.appendChild(repChkLbl);
+  grid.appendChild(repToggleWrap);
+
+  // Repasse fields container
+  const repasseFields=el('div'); repasseFields.style.cssText=`display:${hasRepasse?'contents':'none'};`;
+  grid.appendChild(repasseFields);
+
+  repChk.addEventListener('change',()=>{
+    repasseFields.style.display=repChk.checked?'contents':'none';
+    if(!repChk.checked){ if(fRepVend) fRepVend.value='0'; if(fRepProd) fRepProd.value='0'; updComm(); }
+  });
+
   // Repasse Vendedor
   const repVendPct=Number(l.repVendPct||0);
   const repVendWrap=el('div'); const fRepVend=makeInp(repVendPct,'number'); fRepVend.style.width='55px'; fRepVend.min='0'; fRepVend.max='100'; fRepVend.step='0.5';
@@ -940,7 +977,7 @@ function buildLeadModal(l){
   repVendLbl.appendChild(document.createTextNode(' % = ')); repVendLbl.appendChild(repVendVal);
   if(!ed) fRepVend.readOnly=true;
   repVendWrap.appendChild(fRepVend); repVendWrap.appendChild(repVendLbl);
-  grid.appendChild(makeField('% Repasse Vendedor',repVendWrap));
+  repasseFields.appendChild(makeField('% Repasse Vendedor',repVendWrap));
   fRepVend.addEventListener('input',updComm);
 
   // Repasse Produtor (admin only)
@@ -952,7 +989,7 @@ function buildLeadModal(l){
     repProdVal=el('span','',fmt(calcComm(calcComm(l.value,commPct),repProdPct))); repProdVal.style.cssText='color:#D97706;font-weight:600;';
     repProdLbl.appendChild(document.createTextNode(' % = ')); repProdLbl.appendChild(repProdVal);
     repProdWrap.appendChild(fRepProd); repProdWrap.appendChild(repProdLbl);
-    grid.appendChild(makeField('% Repasse Produtor',repProdWrap));
+    repasseFields.appendChild(makeField('% Repasse Produtor',repProdWrap));
     fRepProd.addEventListener('input',updComm);
   }
   const fQty=makeInp(l.qty||1,'number'); grid.appendChild(makeField('Quantidade',fQty));
@@ -1033,7 +1070,7 @@ function buildLeadModal(l){
   // RIGHT — follow-up
   right.appendChild(el('div','sec-lbl','💬 Follow-up'));
   const fuRow=el('div','fu-row');
-  const fuInp=el('input','fu-inp'); fuInp.placeholder='Mensagem ou observação...';
+  const fuInp=el('input','fu-inp'); fuInp.placeholder='Mensagem... use @nalberty para notificar';
   const fuBtn=el('button','fu-btn'); fuBtn.innerHTML='<i class="ti ti-send" style="color:#fff;font-size:16px;"></i>';
   const qlRow=el('div'); qlRow.style.cssText='display:flex;gap:7px;margin-bottom:.6rem;';
   const qlInp=el('input','fu-inp'); qlInp.placeholder='🔗 Link da cotação (opcional)'; qlInp.style.fontSize='12px';
@@ -1042,12 +1079,18 @@ function buildLeadModal(l){
     const msg=(fuInp.value||'').trim(), link=(qlInp.value||'').trim();
     if(!msg&&!link) return;
     l.activities=l.activities||[];
-    if(msg){ l.activities.push({type:'msg',text:msg,by:currentUser,when:`${dateStr()} · ${nowStr()}`}); }
+    const isMention=msg.toLowerCase().includes('@nalberty');
+    if(msg){
+      l.activities.push({type:isMention?'mention':'msg',text:msg,by:currentUser,when:`${dateStr()} · ${nowStr()}`});
+      if(isMention && currentUser!=='nalberty'){
+        notifications.push({id:'n'+Date.now(),text:`${USERS[currentUser].name} mencionou você no lead "${l.name}": ${msg}`,when:`${dateStr()} · ${nowStr()}`,for:'nalberty',read:false,leadId:l.id});
+      }
+    }
     if(link){ l.activities.push({type:'link',text:link,label:'Cotação anexada',by:currentUser,when:`${dateStr()} · ${nowStr()}`}); }
     fuInp.value=''; qlInp.value='';
     alist.innerHTML=''; renderActList(l.activities, alist);
     showLoading();await apiSave();hideLoading();renderAll();
-    showToast(link?'Cotação registrada!':'Follow-up registrado!');
+    showToast(isMention?'@Nalberty notificado!':link?'Cotação registrada!':'Follow-up registrado!');
   }
   fuInp.addEventListener('keydown',e=>{if(e.key==='Enter') sendFu();});
   fuBtn.addEventListener('click',sendFu);
