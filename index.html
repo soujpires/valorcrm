@@ -2002,17 +2002,7 @@ function showRenovacoesPreview(renovacoes, panel, importBtn){
 async function importarRenovacoes(renovacoes, btn, panel){
   btn.disabled=true; btn.textContent='Importando...';
   try {
-    console.log('1. Iniciando importação de', renovacoes.length, 'leads');
-    const loadResp=await fetch(JSONBIN_URL+'/'+BIN_ID+'/latest?t='+Date.now(),{headers:{'X-Master-Key':JSONBIN_KEY,'Cache-Control':'no-cache'}});
-    console.log('2. Load status:', loadResp.status);
-    if(!loadResp.ok) throw new Error('Erro ao carregar: HTTP '+loadResp.status);
-    const loadJson=await loadResp.json();
-    console.log('3. Load data keys:', Object.keys(loadJson));
-    const data=loadJson.record||{};
-    console.log('4. Leads atuais:', (data.leads||[]).length);
-    const leads=data.leads||[];
     const today=dateStr(); const now=nowStr();
-
     renovacoes.forEach(r=>{
       const ramo=(r.ramo||'').toLowerCase();
       const isNalberty=ramo.includes('auto')||ramo.includes('moto')||ramo.includes('resid');
@@ -2024,40 +2014,25 @@ async function importarRenovacoes(renovacoes, btn, panel){
       else if(ramo.includes('saúde')||ramo.includes('saude')) product='Saúde';
       else if(ramo.includes('viagem')) product='Viagem';
       else if(ramo.includes('empresa')) product='Empresarial';
-
-      leads.push({
+      allLeads.push({
         id:'l'+Date.now()+Math.random().toString(36).substr(2,9),
-        name:r.nome||'Sem nome',
-        dealName:r.ramo||'',
+        name:r.nome||'Sem nome', dealName:r.ramo||'',
         product, insuranceType:'Renovação Própria',
         col:'lead', value:parseFloat(r.premio_liquido)||0,
         commPct:15, repVendPct:0, repProdPct:0, owner,
-        phone:'', obs:`Vencimento: ${r.vencimento||'—'} | Prêmio Líq.: ${fmt(parseFloat(r.premio_liquido)||0)} | Apólice: ${r.apolice||'—'} | Cia: ${r.companhia||'—'}`,
+        phone:'', obs:'Vencimento: '+(r.vencimento||'—')+' | Prêmio Líq.: '+fmt(parseFloat(r.premio_liquido)||0)+' | Apólice: '+(r.apolice||'—')+' | Cia: '+(r.companhia||'—'),
         tags:[], tasks:[], mentionNalberty:false,
-        activities:[{type:'save',text:'Lead importado via Ferramentas IA — Relatório de Renovações',by:currentUser,when:`${today} · ${now}`}]
+        activities:[{type:'save',text:'Lead importado via Ferramentas IA — Relatório de Renovações',by:currentUser,when:today+' · '+now}]
       });
     });
-
-    // Save directly to JSONBin
-    console.log('5. Salvando', leads.length, 'leads no JSONBin...');
-    const saveResp=await fetch(`${JSONBIN_URL}/${BIN_ID}`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
-      body:JSON.stringify({...data, leads})
-    });
-    console.log('6. Save status:', saveResp.status);
-    const saveJson=await saveResp.json();
-    console.log('7. Save response:', JSON.stringify(saveJson).substring(0,100));
-    if(!saveResp.ok) throw new Error('Erro ao salvar: HTTP '+saveResp.status+' - '+JSON.stringify(saveJson));
-
-    allLeads=leads;
+    showLoading();
+    await apiSave();
+    hideLoading();
     btn.style.background='#059669';
     btn.innerHTML='<i class="ti ti-check"></i> '+renovacoes.length+' cards criados!';
     btn.disabled=true;
     renderAll();
     showToast('✅ '+renovacoes.length+' renovações importadas para o pipeline!');
-
-    // Show pipeline link
     setTimeout(()=>{
       const link=el('div'); link.style.cssText='text-align:center;margin-top:8px;';
       const a=el('button','save-btn'); a.style.cssText='background:#7C3AED;display:inline-flex;width:auto;padding:8px 20px;';
@@ -2065,17 +2040,15 @@ async function importarRenovacoes(renovacoes, btn, panel){
       a.addEventListener('click',()=>document.querySelector('[data-page="pipeline"]').click());
       link.appendChild(a); panel.appendChild(link);
     },400);
-
   } catch(e){
-    btn.disabled=false;
-    btn.style.background='';
+    hideLoading();
+    btn.disabled=false; btn.style.background='';
     btn.innerHTML='<i class="ti ti-plus"></i> Importar para o Pipeline';
-    // Show error in panel
     const errDiv=el('div'); errDiv.style.cssText='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:#DC2626;';
-    errDiv.textContent='Erro: '+e.message;
-    panel.appendChild(errDiv);
+    errDiv.textContent='Erro: '+e.message; panel.appendChild(errDiv);
   }
 }
+
 
 function closeRep(){ document.getElementById('rep-overlay').style.display='none'; }
 
