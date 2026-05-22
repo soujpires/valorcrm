@@ -1650,7 +1650,7 @@ function buildPDF(title, subtitle, data){
     +'<div class="section">Negócios Perdidos</div>'
     +'<table><thead><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Valor</th></tr></thead><tbody>'+lostRows+'</tbody></table>'
     +'<div class="footer"><span>Valor CRM • Documento gerado automaticamente</span><span>'+dateNow+'</span></div>'
-    +'<script>window.onload=()=>{window.print();}<\/script>'
+    +'<scr'+'ipt>window.onload=()=>{window.print();}<'+'/scr'+'ipt>'
     +'</body></html>');
   w.document.close();
 }
@@ -2036,3 +2036,7 @@ async function importarRenovacoes(renovacoes, btn, panel){
 }
 
 function closeRep(){ document.getElementById('rep-overlay').style.display='none'; }
+
+</script>
+</body>
+</html>
