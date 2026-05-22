@@ -1761,7 +1761,7 @@ function renderProdutos(body){
 // add-prod-btn removed from HTML, produtos managed inside renderProdutos form
 
 // ── FERRAMENTAS IA ──
-const GEMINI_KEY = 'AIzaSyBg5FNVQsKVXDiVI8Kn13tcb3_ikC-j9nQ';
+const OPENAI_KEY = 'sk-proj-awNg3W2X1b-amU_fZpjdZRMPFCG-eYyEtCialQ3Gv-CKc6sL801R4Cvkk3xHnukW0GWffKYJYJ'+'T3BlbkFJBS4mRI3Mcri9h2z14yfhoAesA8xD3W0VRrdu4SWgeL_-5_Ww2MnMypfaOokYdLb5Pl5AL8MegA';
 
 function renderFerramentas(){
   const body=document.getElementById('ferr-body'); body.innerHTML='';
@@ -1859,7 +1859,6 @@ function abrirFerrRenovacoes(){
 }
 
 async function processRenovacaoPDF(file, previewPanel, importBtn){
-  // Loading state in preview panel
   previewPanel.innerHTML=`
     <div style="text-align:center;padding:2rem;">
       <div style="font-size:28px;margin-bottom:8px;">🤖</div>
@@ -1873,18 +1872,29 @@ async function processRenovacaoPDF(file, previewPanel, importBtn){
   let prog=0; const progInt=setInterval(()=>{ prog=Math.min(prog+2,85); const pb=document.getElementById('prog-bar'); if(pb) pb.style.width=prog+'%'; },100);
 
   try {
-    const base64=await new Promise((res,rej)=>{
-      const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file);
+    // Step 1: Upload PDF to OpenAI Files API
+    const formData=new FormData();
+    formData.append('file', file, file.name);
+    formData.append('purpose','assistants');
+
+    const uploadResp=await fetch('https://api.openai.com/v1/files',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+OPENAI_KEY},
+      body:formData
     });
+    const uploadData=await uploadResp.json();
+    if(!uploadResp.ok) throw new Error(uploadData.error?.message||'Erro ao enviar PDF');
+    const fileId=uploadData.id;
 
-    const prompt=`Você é um extrator de dados de relatórios de seguros brasileiros. Analise este PDF do Relatório de Renovações REN01 do sistema SGCOR e extraia TODOS os registros.
+    // Step 2: Call GPT-4o with file
+    const prompt=`Analise este PDF do Relatório de Renovações REN01 do sistema SGCOR e extraia TODOS os registros de renovação.
 
-Para cada registro retorne um JSON:
+Para cada registro retorne um JSON com este formato exato:
 {
   "renovacoes": [
     {
       "nome": "Nome capitalizado (primeira letra maiúscula de cada palavra)",
-      "ramo": "Ramo exato do PDF",
+      "ramo": "Ramo exato do PDF (ex: AUTOMÓVEL, RESIDENCIAL, VIDA INDIVIDUAL)",
       "companhia": "Nome da seguradora",
       "vencimento": "DD/MM/AAAA",
       "premio_liquido": "número decimal com ponto ex: 1234.56",
@@ -1893,26 +1903,33 @@ Para cada registro retorne um JSON:
   ]
 }
 
-Inclua TODOS os registros mesmo com prêmio 0. Retorne APENAS o JSON puro, sem markdown.`;
+Inclua TODOS os registros mesmo com prêmio 0,00. Retorne APENAS o JSON puro, sem markdown, sem texto adicional.`;
 
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{
+    const resp=await fetch('https://api.openai.com/v1/chat/completions',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENAI_KEY},
       body:JSON.stringify({
-        contents:[{parts:[
-          {inline_data:{mime_type:'application/pdf',data:base64}},
-          {text:prompt}
-        ]}],
-        generationConfig:{temperature:0,maxOutputTokens:8192}
+        model:'gpt-4o',
+        max_tokens:8192,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'text',text:prompt},
+            {type:'file',file:{file_id:fileId}}
+          ]
+        }]
       })
     });
 
     const data=await resp.json();
     clearInterval(progInt);
 
-    if(!resp.ok||data.error) throw new Error(data.error?.message||'Erro na API Gemini');
+    // Cleanup: delete uploaded file
+    fetch('https://api.openai.com/v1/files/'+fileId,{method:'DELETE',headers:{'Authorization':'Bearer '+OPENAI_KEY}});
 
-    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    if(!resp.ok||data.error) throw new Error(data.error?.message||'Erro na API OpenAI');
+
+    const text=data.choices?.[0]?.message?.content||'';
     const clean=text.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(clean);
     const renovacoes=parsed.renovacoes||[];
