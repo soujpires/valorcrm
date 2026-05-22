@@ -1853,9 +1853,7 @@ function abrirFerrRenovacoes(){
   layout.appendChild(left); layout.appendChild(right); body.appendChild(layout);
 
   // Import button — hidden initially
-  const importBtn=el('button','save-btn'); importBtn.style.cssText='margin-top:1rem;display:none;';
-  importBtn.innerHTML='<i class="ti ti-plus"></i> Importar para o Pipeline';
-  body.appendChild(importBtn);
+  const importBtn=null; // button is inside preview panel
 }
 
 async function processRenovacaoPDF(file, previewPanel, importBtn){
@@ -2004,7 +2002,13 @@ function showRenovacoesPreview(renovacoes, panel, importBtn){
 async function importarRenovacoes(renovacoes, btn, panel){
   btn.disabled=true; btn.textContent='Importando...';
   try {
-    const data=await apiLoad();
+    // Load fresh data bypassing cache
+    const loadResp=await fetch(`${JSONBIN_URL}/${BIN_ID}/latest`,{
+      headers:{'X-Master-Key':JSONBIN_KEY,'Cache-Control':'no-cache','X-Bin-Meta':false}
+    });
+    if(!loadResp.ok) throw new Error('Erro ao carregar dados: HTTP '+loadResp.status);
+    const loadData=await loadResp.json();
+    const data=loadData.record||{};
     const leads=data.leads||[];
     const today=dateStr(); const now=nowStr();
 
