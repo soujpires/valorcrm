@@ -1991,10 +1991,14 @@ function showRenovacoesPreview(renovacoes, panel, importBtn){
   });
   panel.appendChild(list);
 
-  // Show import button
+  // Show import button inside panel
   let savedRenovacoes=renovacoes;
-  importBtn.style.display='flex';
-  importBtn.onclick=()=>importarRenovacoes(savedRenovacoes, importBtn, panel);
+  const panelImportBtn=el('button','save-btn'); panelImportBtn.style.cssText='margin-top:12px;width:100%;';
+  panelImportBtn.innerHTML='<i class="ti ti-plus"></i> Importar para o Pipeline';
+  panelImportBtn.onclick=()=>importarRenovacoes(savedRenovacoes, panelImportBtn, panel);
+  panel.appendChild(panelImportBtn);
+  // Also show external button if exists
+  if(importBtn){ importBtn.style.display='flex'; importBtn.onclick=()=>importarRenovacoes(savedRenovacoes, importBtn, panel); }
 }
 
 async function importarRenovacoes(renovacoes, btn, panel){
