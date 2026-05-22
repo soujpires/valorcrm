@@ -2000,10 +2000,30 @@ function showRenovacoesPreview(renovacoes, panel, importBtn){
 }
 
 async function importarRenovacoes(renovacoes, btn, panel){
-  btn.disabled=true; btn.textContent='Importando...';
+  btn.disabled=true; btn.textContent='Fazendo backup e importando...';
   try {
+    // 1. Busca dados FRESCOS do JSONBin (não usa memória)
+    const loadResp=await fetch(JSONBIN_URL+'/'+BIN_ID+'/latest',{
+      headers:{'X-Master-Key':JSONBIN_KEY,'Cache-Control':'no-cache'}
+    });
+    if(!loadResp.ok) throw new Error('Erro ao carregar dados: HTTP '+loadResp.status);
+    const loadJson=await loadResp.json();
+    const dadosAtuais=loadJson.record||{};
+    const leadsExistentes=dadosAtuais.leads||[];
+
+    // 2. Backup automático no bin de backup
+    const BACKUP_BIN='6a0bb7536877513b279502b1';
+    try {
+      await fetch(JSONBIN_URL+'/'+BACKUP_BIN,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+        body:JSON.stringify({...dadosAtuais, backup_date:dateStr()+' · '+nowStr()})
+      });
+    } catch(e){ console.warn('Backup falhou mas importação continua:', e); }
+
+    // 3. Cria novos leads
     const today=dateStr(); const now=nowStr();
-    renovacoes.forEach(r=>{
+    const novosLeads=renovacoes.map(r=>{
       const ramo=(r.ramo||'').toLowerCase();
       const isNalberty=ramo.includes('auto')||ramo.includes('moto')||ramo.includes('resid');
       const owner=isNalberty?'nalberty':'admin';
@@ -2014,7 +2034,7 @@ async function importarRenovacoes(renovacoes, btn, panel){
       else if(ramo.includes('saúde')||ramo.includes('saude')) product='Saúde';
       else if(ramo.includes('viagem')) product='Viagem';
       else if(ramo.includes('empresa')) product='Empresarial';
-      allLeads.push({
+      return {
         id:'l'+Date.now()+Math.random().toString(36).substr(2,9),
         name:r.nome||'Sem nome', dealName:r.ramo||'',
         product, insuranceType:'Renovação Própria',
@@ -2023,16 +2043,29 @@ async function importarRenovacoes(renovacoes, btn, panel){
         phone:'', obs:'Vencimento: '+(r.vencimento||'—')+' | Prêmio Líq.: '+fmt(parseFloat(r.premio_liquido)||0)+' | Apólice: '+(r.apolice||'—')+' | Cia: '+(r.companhia||'—'),
         tags:[], tasks:[], mentionNalberty:false,
         activities:[{type:'save',text:'Lead importado via Ferramentas IA — Relatório de Renovações',by:currentUser,when:today+' · '+now}]
-      });
+      };
     });
+
+    // 4. ADICIONA ao que já existe (nunca substitui)
+    const todosLeads=[...leadsExistentes, ...novosLeads];
+
+    // 5. Salva no JSONBin
     showLoading();
-    await apiSave();
+    const saveResp=await fetch(JSONBIN_URL+'/'+BIN_ID,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      body:JSON.stringify({...dadosAtuais, leads:todosLeads})
+    });
+    if(!saveResp.ok) throw new Error('Erro ao salvar: HTTP '+saveResp.status);
     hideLoading();
+
+    // 6. Atualiza memória
+    allLeads=todosLeads;
     btn.style.background='#059669';
     btn.innerHTML='<i class="ti ti-check"></i> '+renovacoes.length+' cards criados!';
     btn.disabled=true;
     renderAll();
-    showToast('✅ '+renovacoes.length+' renovações importadas para o pipeline!');
+    showToast('✅ '+renovacoes.length+' renovações importadas! Backup salvo.');
     setTimeout(()=>{
       const link=el('div'); link.style.cssText='text-align:center;margin-top:8px;';
       const a=el('button','save-btn'); a.style.cssText='background:#7C3AED;display:inline-flex;width:auto;padding:8px 20px;';
