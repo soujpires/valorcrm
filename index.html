@@ -2247,133 +2247,133 @@ function openNewOpCard(colId){
 function openOpCard(cardId, defaultColId){
   const op=getOpData();
   const card = cardId ? op.cards.find(c=>c.id===cardId) : {
-    id:'op-'+Date.now(),
-    colId:defaultColId||op.columns[0]?.id,
-    title:'',desc:'',labels:[],checklist:[],due:'',priority:'',
-    activities:[],
-    createdAt:dateStr()+' '+nowStr(),
-    _isNew:true
+    id:'op-'+Date.now(), colId:defaultColId||op.columns[0]?.id,
+    title:'',desc:'',labels:[],checklist:[],due:'',priority:'',activities:[],
+    createdAt:dateStr()+' '+nowStr(), _isNew:true
   };
   if(!card) return;
   if(!card.activities) card.activities=[];
 
   const modal=document.getElementById('op-modal');
   const overlay=document.getElementById('op-overlay');
-  overlay.style.display='flex';
-  modal.innerHTML='';
+  overlay.style.display='flex'; modal.innerHTML='';
 
   // ── HEADER ──
   const hdr=document.createElement('div'); hdr.className='modal-hdr';
   const info=document.createElement('div'); info.style.flex='1';
   const col=op.columns.find(c=>c.id===card.colId);
   const badge=el('div','modal-badge',col?.name||'');
-  badge.style.background=(col?.color||'#6B7280')+'22';
-  badge.style.color=col?.color||'#6B7280';
+  badge.style.background=(col?.color||'#6B7280')+'22'; badge.style.color=col?.color||'#6B7280';
   const titleInp=document.createElement('input');
   titleInp.value=card.title; titleInp.placeholder='Título da tarefa...';
   titleInp.style.cssText='font-size:17px;font-weight:600;color:var(--text1);border:none;outline:none;width:100%;background:transparent;font-family:\'DM Sans\',sans-serif;margin-top:4px;';
   info.appendChild(badge); info.appendChild(titleInp);
   const closeBtn=el('button','modal-close',''); closeBtn.innerHTML='<i class="ti ti-x"></i>';
-  closeBtn.addEventListener('click',()=>{ overlay.style.display='none'; });
-  hdr.appendChild(info); hdr.appendChild(closeBtn);
-  modal.appendChild(hdr);
+  closeBtn.addEventListener('click',()=>overlay.style.display='none');
+  hdr.appendChild(info); hdr.appendChild(closeBtn); modal.appendChild(hdr);
 
-  // ── TOOLBAR (botões tipo Trello) ──
+  const selStyle='border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
+
+  // ── TOOLBAR: Coluna · Prioridade · Etiquetas · Datas · Checklist · Excluir ──
   const toolbar=document.createElement('div');
-  toolbar.style.cssText='display:flex;flex-wrap:wrap;gap:6px;padding:.75rem 1.4rem;border-bottom:1px solid var(--border2);';
+  toolbar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:.65rem 1.4rem;border-bottom:1px solid var(--border);background:var(--bg2);';
 
-  // Estado dos painéis expandíveis
-  const panels={desc:false, labels:false, checklist:false, date:false, attach:false};
+  // Coluna select
+  const colSel=document.createElement('select'); colSel.style.cssText=selStyle;
+  op.columns.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===card.colId) o.selected=true; colSel.appendChild(o); });
 
-  // Conteúdo expansível abaixo da toolbar
-  const expandArea=document.createElement('div');
-  expandArea.style.cssText='padding:0 1.4rem;overflow:hidden;';
+  // Prioridade select
+  const priSel=document.createElement('select'); priSel.style.cssText=selStyle;
+  ['','Alta','Média','Baixa'].forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p||'Prioridade'; if(p===card.priority) o.selected=true; priSel.appendChild(o); });
 
-  function mkToolBtn(icon, label, panelKey){
+  // Toggle buttons helper
+  const togglePanels={labels:false, date:false, checklist:false};
+  function mkToggleBtn(icon, label, key){
     const btn=document.createElement('button');
-    btn.style.cssText='display:flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .12s;';
+    btn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .12s;';
     btn.innerHTML=`<i class="ti ti-${icon}" style="font-size:13px;"></i>${label}`;
-    btn.addEventListener('mouseenter',()=>btn.style.background='var(--bg2)');
-    btn.addEventListener('mouseleave',()=>btn.style.background=panels[panelKey]?'var(--blue-light)':'var(--surface)');
     btn.addEventListener('click',()=>{
-      panels[panelKey]=!panels[panelKey];
-      btn.style.background=panels[panelKey]?'var(--blue-light)':'var(--surface)';
-      btn.style.color=panels[panelKey]?'var(--blue)':'var(--text2)';
-      renderExpand();
+      togglePanels[key]=!togglePanels[key];
+      btn.style.background=togglePanels[key]?'var(--blue-light)':'var(--surface)';
+      btn.style.color=togglePanels[key]?'var(--blue)':'var(--text2)';
+      btn.style.borderColor=togglePanels[key]?'var(--blue)':'var(--border)';
+      renderToggleArea();
     });
     return btn;
   }
 
-  const btnDesc   =mkToolBtn('align-left','Descrição','desc');
-  const btnLabels =mkToolBtn('tag','Etiquetas','labels');
-  const btnDate   =mkToolBtn('calendar','Datas','date');
-  const btnCheck  =mkToolBtn('checkbox','Checklist','checklist');
-  toolbar.appendChild(btnDesc);
-  toolbar.appendChild(btnLabels);
-  toolbar.appendChild(btnDate);
-  toolbar.appendChild(btnCheck);
-  modal.appendChild(toolbar);
-  modal.appendChild(expandArea);
+  const btnLab=mkToggleBtn('tag','Etiquetas','labels');
+  const btnDate=mkToggleBtn('calendar','Datas','date');
+  const btnChk=mkToggleBtn('checkbox','Checklist','checklist');
 
-  // ── RENDERIZA PAINÉIS EXPANSÍVEIS ──
-  function renderExpand(){
-    expandArea.innerHTML='';
-    if(panels.desc){
-      const wrap=document.createElement('div'); wrap.style.cssText='padding:.75rem 0;border-bottom:1px solid var(--border2);';
-      const ta=document.createElement('textarea');
-      ta.value=card.desc||''; ta.placeholder='Adicione uma descrição...';
-      ta.style.cssText='width:100%;min-height:72px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;';
-      ta.addEventListener('input',()=>card.desc=ta.value);
-      wrap.appendChild(ta); expandArea.appendChild(wrap);
-    }
-    if(panels.labels){
-      const wrap=document.createElement('div'); wrap.style.cssText='padding:.75rem 0;border-bottom:1px solid var(--border2);display:flex;flex-wrap:wrap;gap:6px;';
+  toolbar.appendChild(colSel); toolbar.appendChild(priSel);
+  toolbar.appendChild(btnLab); toolbar.appendChild(btnDate); toolbar.appendChild(btnChk);
+
+  // Excluir (só cards existentes)
+  if(!card._isNew){
+    const sep=document.createElement('div'); sep.style.cssText='flex:1;';
+    const delBtn=document.createElement('button');
+    delBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid #FCA5A5;border-radius:8px;background:transparent;color:#DC2626;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+    delBtn.innerHTML='<i class="ti ti-trash" style="font-size:13px;"></i>Excluir';
+    delBtn.addEventListener('click',()=>{
+      if(!confirm('Excluir esta tarefa?')) return;
+      op.cards=op.cards.filter(c=>c.id!==card.id);
+      overlay.style.display='none'; saveOpData(); renderOpBoard();
+    });
+    toolbar.appendChild(sep); toolbar.appendChild(delBtn);
+  }
+  modal.appendChild(toolbar);
+
+  // ── ÁREA DOS PAINÉIS TOGGLE (abaixo da toolbar) ──
+  const toggleArea=document.createElement('div');
+  toggleArea.style.cssText='padding:0 1.4rem;border-bottom:1px solid var(--border2);';
+  modal.appendChild(toggleArea);
+
+  function renderToggleArea(){
+    toggleArea.innerHTML='';
+    toggleArea.style.padding=Object.values(togglePanels).some(Boolean)?'0 1.4rem':'0';
+    toggleArea.style.borderBottom=Object.values(togglePanels).some(Boolean)?'1px solid var(--border2)':'none';
+
+    if(togglePanels.labels){
+      const wrap=document.createElement('div'); wrap.style.cssText='padding:.65rem 0;display:flex;flex-wrap:wrap;gap:6px;';
       OP_COLORS.forEach(lc=>{
         const pill=document.createElement('div');
         const active=(card.labels||[]).includes(lc.name);
-        pill.style.cssText=`padding:4px 11px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;background:${lc.bg};color:${lc.color};border:2px solid ${active?lc.color:'transparent'};transition:border .12s;`;
+        pill.style.cssText=`padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;background:${lc.bg};color:${lc.color};border:2px solid ${active?lc.color:'transparent'};`;
         pill.textContent=lc.name;
-        pill.addEventListener('click',()=>{
-          card.labels=card.labels||[];
-          const idx=card.labels.indexOf(lc.name);
-          if(idx>=0) card.labels.splice(idx,1); else card.labels.push(lc.name);
-          pill.style.borderColor=(card.labels||[]).includes(lc.name)?lc.color:'transparent';
-        });
+        pill.addEventListener('click',()=>{ card.labels=card.labels||[]; const idx=card.labels.indexOf(lc.name); if(idx>=0) card.labels.splice(idx,1); else card.labels.push(lc.name); pill.style.borderColor=(card.labels||[]).includes(lc.name)?lc.color:'transparent'; });
         wrap.appendChild(pill);
       });
-      expandArea.appendChild(wrap);
+      toggleArea.appendChild(wrap);
     }
-    if(panels.date){
-      const wrap=document.createElement('div'); wrap.style.cssText='padding:.75rem 0;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px;';
+    if(togglePanels.date){
+      const wrap=document.createElement('div'); wrap.style.cssText='padding:.65rem 0;display:flex;align-items:center;gap:10px;';
       const lbl=el('div','op-side-label','Data de entrega'); lbl.style.margin='0';
       const inp=document.createElement('input'); inp.type='date'; inp.value=card.due?card.due.split('T')[0]:'';
-      inp.style.cssText='border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
+      inp.style.cssText=selStyle;
       inp.addEventListener('change',()=>card.due=inp.value);
-      wrap.appendChild(lbl); wrap.appendChild(inp);
-      expandArea.appendChild(wrap);
+      wrap.appendChild(lbl); wrap.appendChild(inp); toggleArea.appendChild(wrap);
     }
-    if(panels.checklist){
-      const wrap=document.createElement('div'); wrap.style.cssText='padding:.75rem 0;border-bottom:1px solid var(--border2);';
+    if(togglePanels.checklist){
+      const wrap=document.createElement('div'); wrap.style.cssText='padding:.65rem 0;';
       if(card.checklist&&card.checklist.length>0){
         const done=card.checklist.filter(i=>i.done).length;
         const pct=Math.round(done/card.checklist.length*100);
-        const progWrap=document.createElement('div'); progWrap.style.cssText='margin-bottom:8px;';
-        const bar=document.createElement('div'); bar.style.cssText='height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:3px;';
-        const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${pct}%;transition:width .2s;`;
-        bar.appendChild(fill);
-        const pct2=el('div','op-checklist-txt',`${done}/${card.checklist.length} — ${pct}%`);
-        progWrap.appendChild(bar); progWrap.appendChild(pct2); wrap.appendChild(progWrap);
+        const bar=document.createElement('div'); bar.style.cssText='height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;';
+        const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${pct}%;`;
+        bar.appendChild(fill); wrap.appendChild(bar);
+        wrap.appendChild(el('div','op-checklist-txt',`${done}/${card.checklist.length} — ${pct}%`));
       }
-      const clList=document.createElement('div');
+      const clList=document.createElement('div'); clList.style.marginTop='6px';
       function renderCL(){
         clList.innerHTML='';
         (card.checklist||[]).forEach((item,i)=>{
           const row=document.createElement('div'); row.className='op-checklist-item';
           const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
-          cb.addEventListener('change',()=>{ card.checklist[i].done=cb.checked; renderExpand(); });
+          cb.addEventListener('change',()=>{ card.checklist[i].done=cb.checked; renderToggleArea(); });
           const txt=document.createElement('span'); txt.className='op-check-txt'+(item.done?' done':''); txt.textContent=item.text;
           const del=document.createElement('button'); del.className='op-check-del'; del.innerHTML='<i class="ti ti-x"></i>';
-          del.addEventListener('click',()=>{ card.checklist.splice(i,1); renderExpand(); });
+          del.addEventListener('click',()=>{ card.checklist.splice(i,1); renderToggleArea(); });
           row.appendChild(cb); row.appendChild(txt); row.appendChild(del); clList.appendChild(row);
         });
         const addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:6px;margin-top:8px;';
@@ -2382,86 +2382,61 @@ function openOpCard(cardId, defaultColId){
         const addBtn=document.createElement('button');
         addBtn.style.cssText='background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
         addBtn.textContent='Add';
-        addBtn.addEventListener('click',()=>{ const v=addInp.value.trim(); if(!v) return; card.checklist=card.checklist||[]; card.checklist.push({text:v,done:false}); addInp.value=''; renderExpand(); });
+        addBtn.addEventListener('click',()=>{ const v=addInp.value.trim(); if(!v) return; card.checklist=card.checklist||[]; card.checklist.push({text:v,done:false}); addInp.value=''; renderToggleArea(); });
         addInp.addEventListener('keydown',e=>{ if(e.key==='Enter') addBtn.click(); });
         addRow.appendChild(addInp); addRow.appendChild(addBtn); clList.appendChild(addRow);
       }
-      renderCL();
-      wrap.appendChild(clList); expandArea.appendChild(wrap);
+      renderCL(); wrap.appendChild(clList); toggleArea.appendChild(wrap);
     }
   }
 
-  // ── BODY (main + sidebar) ──
-  const body=document.createElement('div'); body.className='op-modal-body';
-  body.style.cssText='padding:1rem 1.4rem;display:grid;grid-template-columns:1fr 220px;gap:1.25rem;flex:1;overflow-y:auto;';
+  // ── BODY: esquerda = descrição + checklist | direita = follow-up ──
+  const body=document.createElement('div');
+  body.style.cssText='display:grid;grid-template-columns:1fr 280px;gap:0;flex:1;overflow:hidden;';
 
-  // Main — vazio por padrão (painéis ficam no expandArea)
-  const main=document.createElement('div'); main.style.cssText='display:flex;flex-direction:column;gap:0;';
+  // ESQUERDA — Descrição sempre visível
+  const left=document.createElement('div');
+  left.style.cssText='display:flex;flex-direction:column;padding:1rem 1.4rem;overflow-y:auto;border-right:1px solid var(--border2);gap:10px;';
+  left.appendChild(el('div','sec-lbl','<i class="ti ti-align-left" style="font-size:13px;"></i> Descrição'));
+  const descTA=document.createElement('textarea');
+  descTA.value=card.desc||''; descTA.placeholder='Instruções, contexto e detalhes da tarefa...';
+  descTA.style.cssText='width:100%;min-height:160px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;line-height:1.5;';
+  descTA.addEventListener('input',()=>card.desc=descTA.value);
+  left.appendChild(descTA);
 
-  // ── FOLLOW-UP (na main) ──
-  main.appendChild(el('div','sec-lbl','<i class="ti ti-message-dots" style="font-size:13px;"></i> Follow-up'));
+  // DIREITA — Follow-up
+  const right=document.createElement('div');
+  right.style.cssText='display:flex;flex-direction:column;padding:1rem 1.2rem;overflow-y:auto;gap:6px;';
+  right.appendChild(el('div','sec-lbl','<i class="ti ti-message-dots" style="font-size:13px;"></i> Follow-up'));
   const fuRow=el('div','fu-row');
-  const fuInp=el('input','fu-inp'); fuInp.placeholder='Mensagem... use @nalberty para notificar';
+  const fuInp=el('input','fu-inp'); fuInp.placeholder='Mensagem... use @nalberty';
   const fuBtn=el('button','fu-btn'); fuBtn.innerHTML='<i class="ti ti-send" style="color:#fff;font-size:16px;"></i>';
-  fuRow.appendChild(fuInp); fuRow.appendChild(fuBtn); main.appendChild(fuRow);
+  fuRow.appendChild(fuInp); fuRow.appendChild(fuBtn); right.appendChild(fuRow);
 
   async function sendOpFu(){
     const msg=(fuInp.value||'').trim(); if(!msg) return;
     card.activities=card.activities||[];
     const isMention=msg.toLowerCase().includes('@nalberty');
     card.activities.push({type:isMention?'mention':'msg',text:msg,by:currentUser,when:`${dateStr()} · ${nowStr()}`});
-    if(isMention && currentUser!=='nalberty'){
-      notifications.push({id:'n'+Date.now(),text:`${USERS[currentUser].name} mencionou você na tarefa "${card.title}": ${msg}`,when:`${dateStr()} · ${nowStr()}`,for:'nalberty',read:false});
-    }
-    fuInp.value='';
-    alist.innerHTML=''; renderActList(card.activities, alist);
+    if(isMention && currentUser!=='nalberty') notifications.push({id:'n'+Date.now(),text:`${USERS[currentUser].name} mencionou você na tarefa "${card.title}": ${msg}`,when:`${dateStr()} · ${nowStr()}`,for:'nalberty',read:false});
+    fuInp.value=''; alist.innerHTML=''; renderActList(card.activities, alist);
     showLoading(); await apiSave(); hideLoading();
     showToast(isMention?'@Nalberty notificado!':'Follow-up registrado!');
   }
   fuInp.addEventListener('keydown',e=>{ if(e.key==='Enter') sendOpFu(); });
   fuBtn.addEventListener('click',sendOpFu);
 
-  main.appendChild(el('div','sec-lbl','Atividades recentes'));
-  const alist=el('div','act-list');
+  right.appendChild(el('div','sec-lbl','Atividades'));
+  const alist=el('div','act-list'); alist.style.flex='1';
   renderActList(card.activities, alist);
-  main.appendChild(alist);
+  right.appendChild(alist);
 
-  // ── SIDEBAR ──
-  const side=document.createElement('div'); side.className='op-modal-side';
-
-  // Coluna
-  side.appendChild(el('div','op-side-label','Coluna'));
-  const colSel=document.createElement('select');
-  colSel.style.cssText='width:100%;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
-  op.columns.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===card.colId) o.selected=true; colSel.appendChild(o); });
-  side.appendChild(colSel);
-
-  // Prioridade
-  side.appendChild(el('div','op-side-label','Prioridade'));
-  const priSel=document.createElement('select');
-  priSel.style.cssText=colSel.style.cssText;
-  ['','Alta','Média','Baixa'].forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p||'Sem prioridade'; if(p===card.priority) o.selected=true; priSel.appendChild(o); });
-  side.appendChild(priSel);
-
-  // Excluir (cards existentes)
-  if(!card._isNew){
-    const delBtn=document.createElement('button');
-    delBtn.style.cssText='margin-top:12px;padding:8px;border:1px solid #FCA5A5;border-radius:8px;background:#FEF2F2;color:#DC2626;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;';
-    delBtn.innerHTML='<i class="ti ti-trash"></i> Excluir tarefa';
-    delBtn.addEventListener('click',()=>{
-      if(!confirm('Excluir esta tarefa?')) return;
-      op.cards=op.cards.filter(c=>c.id!==card.id);
-      overlay.style.display='none'; saveOpData(); renderOpBoard();
-    });
-    side.appendChild(delBtn);
-  }
-
-  body.appendChild(main); body.appendChild(side);
+  body.appendChild(left); body.appendChild(right);
   modal.appendChild(body);
 
   // ── FOOTER ──
   const foot=document.createElement('div');
-  foot.style.cssText='padding:.875rem 1.4rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;';
+  foot.style.cssText='padding:.75rem 1.4rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;';
   const cancelBtn=document.createElement('button');
   cancelBtn.style.cssText='padding:7px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
   cancelBtn.textContent='Cancelar'; cancelBtn.addEventListener('click',()=>overlay.style.display='none');
@@ -2471,14 +2446,14 @@ function openOpCard(cardId, defaultColId){
   saveBtn.addEventListener('click',()=>{
     if(!titleInp.value.trim()){ titleInp.focus(); return; }
     card.title=titleInp.value.trim();
+    card.desc=descTA.value.trim();
     card.colId=colSel.value;
     card.priority=priSel.value;
     if(card._isNew){ delete card._isNew; op.cards.push(card); }
     else{ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
     overlay.style.display='none'; saveOpData(); renderOpBoard();
   });
-  foot.appendChild(cancelBtn); foot.appendChild(saveBtn);
-  modal.appendChild(foot);
+  foot.appendChild(cancelBtn); foot.appendChild(saveBtn); modal.appendChild(foot);
 
   overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.style.display='none'; },{once:true});
   titleInp.focus();
