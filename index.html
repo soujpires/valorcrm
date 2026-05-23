@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text y='.9em' font-size='70' x='12'>🛡️</text></svg>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Valor CRM</title>
@@ -16,6 +17,15 @@
   --text1:#111827;--text2:#374151;--text3:#6B7280;--text4:#9CA3AF;
   --blue:#2563EB;--blue-light:#EFF6FF;
   --shadow:rgba(0,0,0,.06);
+  --input-bg:#fff;
+  --modal-bg:#fff;
+  --card-bg:#fff;
+  --select-bg:#fff;
+  --tag-green-bg:#ECFDF5;--tag-green-border:#A7F3D0;--tag-green-color:#059669;
+  --tag-purple-bg:#F5F3FF;--tag-purple-color:#7C3AED;
+  --tag-orange-bg:#FFF7ED;--tag-orange-color:#EA580C;
+  --tag-yellow-bg:#FFFBEB;--tag-yellow-color:#D97706;
+  --upload-bg:#FAFAFA;
 }
 html.dark{
   --bg:#0F1117;--bg2:#161B27;--surface:#1E2433;
@@ -23,7 +33,31 @@ html.dark{
   --text1:#F1F5F9;--text2:#CBD5E1;--text3:#94A3B8;--text4:#64748B;
   --blue:#3B82F6;--blue-light:#1E3A5F;
   --shadow:rgba(0,0,0,.3);
+  --input-bg:#161B27;
+  --modal-bg:#1E2433;
+  --card-bg:#1E2433;
+  --select-bg:#161B27;
+  --tag-green-bg:#052e16;--tag-green-border:#166534;--tag-green-color:#4ade80;
+  --tag-purple-bg:#2e1065;--tag-purple-color:#c084fc;
+  --tag-orange-bg:#431407;--tag-orange-color:#fb923c;
+  --tag-yellow-bg:#422006;--tag-yellow-color:#fbbf24;
+  --upload-bg:#161B27;
 }
+/* Garante que inputs, selects e textareas herdam o tema no dark */
+html.dark input, html.dark select, html.dark textarea{
+  background:var(--input-bg)!important;
+  color:var(--text1)!important;
+  border-color:var(--border)!important;
+  color-scheme:dark;
+}
+html.dark .stage-sel, html.dark .inp{background:var(--input-bg)!important;color:var(--text1)!important;}
+html.dark .modal{background:var(--modal-bg)!important;}
+html.dark .card{background:var(--card-bg)!important;}
+/* Tooltips e overlays */
+html.dark .overlay{background:rgba(0,0,0,.65);}
+/* Scrollbars no dark */
+html.dark ::-webkit-scrollbar-thumb{background:#2A3348;}
+html.dark ::-webkit-scrollbar-track{background:#0F1117;}
 
 html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text1);font-size:14px;transition:background .2s,color .2s;}
 
@@ -351,9 +385,9 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
       </div>
       <div class="vtabs" id="view-tabs" style="display:none">
         <select id="view-select" class="stage-sel" style="font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text1);font-family:'DM Sans',sans-serif;cursor:pointer;">
-          <option value="all">👥 Todos</option>
-          <option value="mine">🙋 Meus</option>
-          <option value="nalberty">👤 Nalberty</option>
+          <option value="all">Todos</option>
+          <option value="mine">Meus</option>
+          <option value="nalberty">Nalberty</option>
         </select>
       </div>
       <button class="ibtn" id="theme-btn" title="Alternar tema"><i class="ti ti-moon"></i></button>
@@ -693,7 +727,7 @@ function renderBoard(){
     const colEl=el('div','col'); colEl.dataset.colId=col.id;
     const acc=el('div','cacc'); acc.style.background=col.color; colEl.appendChild(acc);
     const hdr=el('div','chdr'); const tr=el('div','ctr');
-    const icon=col.terminal==='won'?'🏆 ':col.terminal==='lost'?'❌ ':'';
+    const icon=col.terminal==='won'?'<i class="ti ti-trophy" style="color:#059669;font-size:12px;"></i> ':col.terminal==='lost'?'<i class="ti ti-x" style="color:#DC2626;font-size:12px;"></i> ':'';
     const nm=el('span','cnm',icon+col.name); const acts=el('div','cact'); const cnt=el('span','cct',String(cl.length)); acts.appendChild(cnt);
     if(!col.fixed){
       const eb=el('button','cedit-btn'); eb.innerHTML='<i class="ti ti-pencil"></i>'; eb.addEventListener('click',()=>openEditCol(col.id));
@@ -858,12 +892,12 @@ function renderTasksPage(){
     // info
     const info=el('div','task-info');
     const nm=el('div','task-card-name'+(t.status==='done'?' done':''),t.name); info.appendChild(nm);
-    if(t.completionNote) info.appendChild(el('div','task-card-desc',`✅ ${t.completionNote}`));
+    if(t.completionNote) info.appendChild(el('div','task-card-desc',`<i class="ti ti-circle-check" style="color:#059669;font-size:12px;"></i> ${t.completionNote}`));
     else if(t.desc) info.appendChild(el('div','task-card-desc',t.desc));
     const meta=el('div','task-card-meta');
     if(t.due){ const dp=el('span','task-meta-pill pill-date'); dp.innerHTML=`<i class="ti ti-clock" style="font-size:10px;"></i> ${fmtDue(t.due)}`; meta.appendChild(dp); }
     if(t._leadName){ const lp=el('span','task-meta-pill pill-lead'); lp.innerHTML=`<i class="ti ti-user" style="font-size:10px;"></i> ${t._leadName}`; meta.appendChild(lp); }
-    if(t.status==='done') meta.appendChild(el('span','task-meta-pill pill-done','✓ Concluída'));
+    if(t.status==='done') meta.appendChild(el('span','task-meta-pill pill-done','Concluída'));
     info.appendChild(meta); card.appendChild(info);
     // actions
     const taskActs=el('div','task-actions');
@@ -1023,7 +1057,7 @@ function buildLeadModal(l){
   function makeSel(opts,val){ const s=document.createElement('select'); s.className='df-sel'; opts.forEach(o=>{ const opt=el('option','',typeof o==='string'?o:o.name); opt.value=typeof o==='string'?o:o.id; if(opt.value===val) opt.selected=true; s.appendChild(opt); }); if(!ed) s.disabled=true; return s; }
   function makeTa(val){ const t=document.createElement('textarea'); t.className='df-ta'; t.value=val||''; if(!ed) t.readOnly=true; return t; }
 
-  left.appendChild(el('div','sec-lbl','📋 Dados'));
+  left.appendChild(el('div','sec-lbl','<i class="ti ti-user" style="font-size:13px;"></i> Dados'));
   const grid=el('div','dgrid');
   const fName=makeInp(l.name); grid.appendChild(makeField('Nome do cliente',fName));
   const fDeal=makeInp(l.dealName||''); fDeal.placeholder='Ex: Seguro Auto João'; grid.appendChild(makeField('Nome do negócio',fDeal));
@@ -1047,7 +1081,7 @@ function buildLeadModal(l){
   const repToggleWrap=el('div'); repToggleWrap.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;grid-column:1/-1;';
   const repChk=document.createElement('input'); repChk.type='checkbox'; repChk.id='rep-toggle-chk'; repChk.checked=hasRepasse; repChk.style.cssText='width:15px;height:15px;accent-color:#7C3AED;cursor:pointer;';
   const repChkLbl=el('label'); repChkLbl.htmlFor='rep-toggle-chk'; repChkLbl.style.cssText='font-size:12px;font-weight:600;color:#7C3AED;cursor:pointer;';
-  repChkLbl.textContent='💸 Há repasse neste negócio';
+  repChkLbl.innerHTML='<i class="ti ti-arrow-fork" style="font-size:13px;"></i> Há repasse neste negócio';
   repToggleWrap.appendChild(repChk); repToggleWrap.appendChild(repChkLbl);
   grid.appendChild(repToggleWrap);
 
@@ -1107,7 +1141,7 @@ function buildLeadModal(l){
   grid.appendChild(obsWrap);
   // Tags
   left.appendChild(grid);
-  left.appendChild(el('div','slbl','🏷️ Tags'));
+  left.appendChild(el('div','slbl','<i class="ti ti-tag" style="font-size:13px;"></i> Tags'));
   const tagEditWrap=el('div'); tagEditWrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;';
   const currentTags=l.tags?[...l.tags]:[];
   if(customTags.length===0){
@@ -1131,7 +1165,7 @@ function buildLeadModal(l){
   left.appendChild(tagEditWrap);
 
   // tasks section
-  left.appendChild(el('div','sec-lbl','✅ Atividades & Progresso'));
+  left.appendChild(el('div','sec-lbl','<i class="ti ti-chart-line" style="font-size:13px;"></i> Atividades & Progresso'));
   const tasks=l.tasks||[];
   const done2=tasks.filter(t=>t.done).length, tot2=tasks.length, pct2=tot2>0?Math.round((done2/tot2)*100):0;
   const fc2=pct2>=75?'#22C55E':pct2>=40?'#2563EB':'#F59E0B';
@@ -1180,12 +1214,12 @@ function buildLeadModal(l){
   }
 
   // RIGHT — follow-up
-  right.appendChild(el('div','sec-lbl','💬 Follow-up'));
+  right.appendChild(el('div','sec-lbl','<i class="ti ti-message-dots" style="font-size:13px;"></i> Follow-up'));
   const fuRow=el('div','fu-row');
   const fuInp=el('input','fu-inp'); fuInp.placeholder='Mensagem... use @nalberty para notificar';
   const fuBtn=el('button','fu-btn'); fuBtn.innerHTML='<i class="ti ti-send" style="color:#fff;font-size:16px;"></i>';
   const qlRow=el('div'); qlRow.style.cssText='display:flex;gap:7px;margin-bottom:.6rem;';
-  const qlInp=el('input','fu-inp'); qlInp.placeholder='🔗 Link da cotação (opcional)'; qlInp.style.fontSize='12px';
+  const qlInp=el('input','fu-inp'); qlInp.placeholder='Link da cotação (opcional)'; qlInp.style.fontSize='12px';
   qlRow.appendChild(qlInp); right.appendChild(qlRow);
   async function sendFu(){
     const msg=(fuInp.value||'').trim(), link=(qlInp.value||'').trim();
@@ -1292,7 +1326,7 @@ function openNewLeadInCol(colId){
   const repTogNL=el('div','fw'); repTogNL.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;';
   const repChkNL=document.createElement('input'); repChkNL.type='checkbox'; repChkNL.id='rep-toggle-nl'; repChkNL.style.cssText='width:15px;height:15px;accent-color:#7C3AED;cursor:pointer;';
   const repChkNLLbl=el('label'); repChkNLLbl.htmlFor='rep-toggle-nl'; repChkNLLbl.style.cssText='font-size:13px;font-weight:600;color:#7C3AED;cursor:pointer;';
-  repChkNLLbl.textContent='💸 Há repasse neste negócio';
+  repChkNLLbl.innerHTML='<i class="ti ti-arrow-fork" style="font-size:13px;"></i> Há repasse neste negócio';
   repTogNL.appendChild(repChkNL); repTogNL.appendChild(repChkNLLbl); body.appendChild(repTogNL);
 
   // Repasse Vendedor — hidden by default
@@ -1410,15 +1444,15 @@ function renderNotifDot(){ const mine=notifications.filter(n=>n.for===currentUse
  */
 function showWapToast(titulo, texto, tipo, leadId){
   const TIPO_ICON = {
-    ganho:      '🏆',
-    perdido:    '❌',
-    tarefa:     '⏰',
-    formulario: '📋',
-    renovacao:  '🔄',
-    padrao:     '➕',
+    ganho:      '<i class="ti ti-trophy" style="color:#059669"></i>',
+    perdido:    '<i class="ti ti-x" style="color:#DC2626"></i>',
+    tarefa:     '<i class="ti ti-clock" style="color:#F59E0B"></i>',
+    formulario: '<i class="ti ti-forms" style="color:#7C3AED"></i>',
+    renovacao:  '<i class="ti ti-refresh" style="color:#059669"></i>',
+    padrao:     '<i class="ti ti-bell" style="color:#3B82F6"></i>',
   };
   const t = tipo || 'padrao';
-  const icon = TIPO_ICON[t] || '🔔';
+  const icon = TIPO_ICON[t] || '<i class="ti ti-bell"></i>';
 
   const wrap = document.getElementById('notif-toast-wrap');
   const toast = document.createElement('div');
@@ -1430,7 +1464,7 @@ function showWapToast(titulo, texto, tipo, leadId){
       `<div class="notif-toast-title">${titulo}</div>` +
       (texto ? `<div class="notif-toast-sub">${texto}</div>` : '') +
     `</div>` +
-    `<div class="notif-toast-close" title="Fechar">✕</div>`;
+    `<div class="notif-toast-close" title="Fechar"><i class="ti ti-x" style="font-size:12px;"></i></div>`;
 
   wrap.appendChild(toast);
 
@@ -1460,7 +1494,7 @@ function showWapToast(titulo, texto, tipo, leadId){
 // Alias interno para retrocompatibilidade com qualquer chamada antiga
 function showNotifToast(icon, title, sub, color){
   // Detecta tipo pelo ícone para manter compatibilidade
-  const mapaIconeTipo = {'🏆':'ganho','❌':'perdido','⏰':'tarefa','📋':'formulario','🔄':'renovacao'};
+  const mapaIconeTipo = {}; // alias via tipo direto
   const tipo = mapaIconeTipo[icon] || 'padrao';
   showWapToast(title, sub, tipo, null);
 }
@@ -1553,11 +1587,11 @@ function verificarNegociosGanhosOuPerdidos(novosLeads, leadsAntigos){
     if(antigo.col !== 'ganho' && l.col === 'ganho'){
       if(currentUser === 'admin'){
         addNotification({for:'admin', text:`Negócio GANHO: ${l.name}`, leadId:l.id});
-        showWapToast('Negócio Ganho! 🎉', l.name, 'ganho', l.id);
+        showWapToast('Negócio Ganho!', l.name, 'ganho', l.id);
       }
       if(currentUser === 'nalberty' && l.owner === 'nalberty'){
         addNotification({for:'nalberty', text:`Negócio GANHO: ${l.name}`, leadId:l.id});
-        showWapToast('Negócio Ganho! 🎉', l.name, 'ganho', l.id);
+        showWapToast('Negócio Ganho!', l.name, 'ganho', l.id);
       }
     }
 
@@ -1654,9 +1688,9 @@ function buildReport(tab){
     const allMonths=months.length?months:[curMonth]; allMonths.forEach(m=>{ const o=el('option','',m); o.value=m; if(m===selMonth) o.selected=true; ms.appendChild(o); }); ms.addEventListener('change',()=>buildReport('month')); mf.appendChild(ms); body.appendChild(mf);
   }
   const sg=el('div'); sg.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;';
-  function smC(lbl,val,sub,color='#111827'){ const c=el('div','mc'); c.appendChild(el('div','mlbl',lbl)); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); c.appendChild(el('div','msub',sub)); return c; }
-  sg.appendChild(smC('🏆 Ganhos',won.length,fmt(won.reduce((s,c)=>s+(c.value||0),0)),'#059669'));
-  sg.appendChild(smC('❌ Perdidos',lost.length,fmt(lost.reduce((s,c)=>s+(c.value||0),0)),'#DC2626'));
+  function smC(lbl,val,sub,color='#111827'){ const c=el('div','mc'); const lb=el('div','mlbl'); lb.innerHTML=lbl; c.appendChild(lb); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); c.appendChild(el('div','msub',sub)); return c; }
+  sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:13px;"></i> Ganhos',won.length,fmt(won.reduce((s,c)=>s+(c.value||0),0)),'#059669'));
+  sg.appendChild(smC('<i class="ti ti-x" style="color:#DC2626;font-size:13px;"></i> Perdidos',lost.length,fmt(lost.reduce((s,c)=>s+(c.value||0),0)),'#DC2626'));
   sg.appendChild(smC(tab==='nalberty'?'Comissão Nalberty':'Comissão Total',fmt(tab==='nalberty'?nalComm:totalComm),'a pagar','#059669'));
   body.appendChild(sg);
   body.appendChild(el('div','sec-lbl','Negócios Ganhos'));
@@ -1729,9 +1763,9 @@ function renderFaturamento(){
     // Summary cards
     const sg=el('div'); sg.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;';
     function smC(lbl,val,color='#111827'){ const c=el('div','mc'); c.appendChild(el('div','mlbl',lbl)); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); return c; }
-    sg.appendChild(smC('🏆 Negócios',String(won.length)));
-    sg.appendChild(smC('💰 Prêmio Total',fmt(totalPremio),'#2563EB'));
-    sg.appendChild(smC('💵 Meu Repasse',fmt(totalRepVend),'#059669'));
+    sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:13px;"></i> Negócios',String(won.length)));
+    sg.appendChild(smC('<i class="ti ti-coin" style="font-size:13px;"></i> Prêmio Total',fmt(totalPremio),'#2563EB'));
+    sg.appendChild(smC('<i class="ti ti-arrow-fork" style="font-size:13px;"></i> Meu Repasse',fmt(totalRepVend),'#059669'));
     body.appendChild(sg);
 
     // Table
@@ -1787,16 +1821,16 @@ function renderFaturamento(){
 
     // Summary cards
     const sg=el('div'); sg.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;';
-    function smC(lbl,val,sub,color='#111827'){ const c=el('div','mc'); c.appendChild(el('div','mlbl',lbl)); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); if(sub) c.appendChild(el('div','msub',sub)); return c; }
-    sg.appendChild(smC('🏆 Negócios Fechados',String(won.length),'ganhos no período'));
-    sg.appendChild(smC('💰 Prêmio Líquido',fmt(totalPremio),'valor total vendido','#2563EB'));
-    sg.appendChild(smC('📊 Comissão Total',fmt(totalComm),'gerada no período','#059669'));
+    function smC(lbl,val,sub,color='#111827'){ const c=el('div','mc'); const lb=el('div','mlbl'); lb.innerHTML=lbl; c.appendChild(lb); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); if(sub) c.appendChild(el('div','msub',sub)); return c; }
+    sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:13px;"></i> Negócios Fechados',String(won.length),'ganhos no período'));
+    sg.appendChild(smC('<i class="ti ti-coin" style="font-size:13px;"></i> Prêmio Líquido',fmt(totalPremio),'valor total vendido','#2563EB'));
+    sg.appendChild(smC('<i class="ti ti-chart-bar" style="font-size:13px;"></i> Comissão Total',fmt(totalComm),'gerada no período','#059669'));
     body.appendChild(sg);
 
     const sg2=el('div'); sg2.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;';
-    sg2.appendChild(smC('🏦 Comissão Líquida',fmt(commLiq),'corretora (líquida)','#1E40AF'));
-    sg2.appendChild(smC('👤 Repasse Vendedor',fmt(totalRepVend),'total vendedores','#7C3AED'));
-    sg2.appendChild(smC('🤝 Repasse Produtor',fmt(totalRepProd),'total parceiros','#D97706'));
+    sg2.appendChild(smC('<i class="ti ti-building-bank" style="font-size:13px;"></i> Comissão Líquida',fmt(commLiq),'corretora (líquida)','#1E40AF'));
+    sg2.appendChild(smC('<i class="ti ti-user" style="font-size:13px;"></i> Repasse Vendedor',fmt(totalRepVend),'total vendedores','#7C3AED'));
+    sg2.appendChild(smC('<i class="ti ti-users" style="font-size:13px;"></i> Repasse Produtor',fmt(totalRepProd),'total parceiros','#D97706'));
     body.appendChild(sg2);
 
     // Table
@@ -1894,7 +1928,8 @@ function buildPDF(title, subtitle, data){
   const now=new Date();
   const dateNow=now.toLocaleDateString('pt-BR');
   const timeNow=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+title+'</title><style>'
+  w.document.write('<!DOCTYPE html><html lang="pt-BR"><head>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563EB'/><text y='.9em' font-size='70' x='12'>🛡️</text></svg>"><meta charset="UTF-8"><title>'+title+'</title><style>'
     +'*{box-sizing:border-box;margin:0;padding:0;}'
     +'@page{size:A4 portrait;margin:14mm 10mm;}'
     +'body{font-family:Arial,sans-serif;font-size:9px;color:var(--text1);background:var(--surface);}'
@@ -2151,14 +2186,14 @@ function abrirFerrRenovacoes(){
 
   // LEFT — Upload
   const left=el('div');
-  const leftTitle=el('div','sec-lbl','📤 Upload do PDF');
+  const leftTitle=el('div','sec-lbl','<i class="ti ti-upload" style="font-size:13px;"></i> Upload do PDF');
   left.appendChild(leftTitle);
 
   const desc=el('div'); desc.style.cssText='background:var(--blue-light);border:1px solid #BFDBFE;border-radius:10px;padding:12px 14px;margin-bottom:1rem;font-size:12px;color:#1E40AF;line-height:1.6;';
   desc.innerHTML='Exporte o <strong>REN01</strong> do SGCOR e faça o upload abaixo. A IA irá extrair todos os segurados e preparar os cards para importação.';
   left.appendChild(desc);
 
-  const uploadWrap=el('div'); uploadWrap.style.cssText='border:2px dashed #D1D5DB;border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:#FAFAFA;';
+  const uploadWrap=el('div'); uploadWrap.style.cssText='border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--upload-bg);color:var(--text3);';
   uploadWrap.innerHTML=`<i class="ti ti-file-type-pdf" style="font-size:40px;color:var(--text4);display:block;margin-bottom:8px;"></i>
     <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px;">Arraste o PDF aqui</div>
     <div style="font-size:11px;color:var(--text4);margin-bottom:12px;">ou clique para selecionar</div>
@@ -2192,10 +2227,10 @@ function abrirFerrRenovacoes(){
 async function processRenovacaoPDF(file, previewPanel, importBtn){
   previewPanel.innerHTML=`
     <div style="text-align:center;padding:2rem;">
-      <div style="font-size:28px;margin-bottom:8px;">🤖</div>
+      <div style="margin-bottom:8px;"><i class="ti ti-robot" style="font-size:32px;color:var(--blue);"></i></div>
       <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:4px;">Processando PDF...</div>
       <div style="font-size:11px;color:var(--text4);margin-bottom:12px;">A IA está extraindo os dados</div>
-      <div style="height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
         <div id="prog-bar" style="height:100%;background:var(--blue);border-radius:2px;width:0%;transition:width .3s;"></div>
       </div>
     </div>`;
@@ -2271,7 +2306,7 @@ Inclua TODOS os registros mesmo com prêmio 0,00. Retorne APENAS o JSON puro, se
   } catch(e){
     clearInterval(progInt);
     previewPanel.innerHTML=`<div style="padding:1rem;text-align:center;">
-      <div style="font-size:24px;margin-bottom:8px;">❌</div>
+      <div style="margin-bottom:8px;"><i class="ti ti-circle-x" style="font-size:28px;color:#DC2626;"></i></div>
       <div style="font-size:13px;font-weight:600;color:#DC2626;margin-bottom:4px;">Erro ao processar</div>
       <div style="font-size:11px;color:#EF4444;">${e.message}</div>
     </div>`;
@@ -2398,7 +2433,7 @@ async function importarRenovacoes(renovacoes, btn, panel){
     btn.innerHTML='<i class="ti ti-check"></i> '+renovacoes.length+' cards criados!';
     btn.disabled=true;
     renderAll();
-    showToast('✅ '+renovacoes.length+' renovações importadas! Backup salvo.');
+    showToast(renovacoes.length+' renovações importadas! Backup salvo.');
     setTimeout(()=>{
       const link=el('div'); link.style.cssText='text-align:center;margin-top:8px;';
       const a=el('button','save-btn'); a.style.cssText='background:#7C3AED;display:inline-flex;width:auto;padding:8px 20px;';
@@ -2410,7 +2445,7 @@ async function importarRenovacoes(renovacoes, btn, panel){
     hideLoading();
     btn.disabled=false; btn.style.background='';
     btn.innerHTML='<i class="ti ti-plus"></i> Importar para o Pipeline';
-    const errDiv=el('div'); errDiv.style.cssText='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:#DC2626;';
+    const errDiv=el('div'); errDiv.style.cssText='background:var(--tag-orange-bg,#FEF2F2);border:1px solid #FCA5A5;border-radius:8px;padding:10px;margin-top:8px;font-size:12px;color:#DC2626;';
     errDiv.textContent='Erro: '+e.message; panel.appendChild(errDiv);
   }
 }
