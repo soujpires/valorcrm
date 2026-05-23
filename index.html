@@ -552,7 +552,7 @@ const calcComm = (v,p) => (Number(v)||0)*(Number(p)||0)/100;
 const nowStr = () => new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 const dateStr = () => new Date().toLocaleDateString('pt-BR');
 
-function el(tag,cls,txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!==undefined) e.textContent=txt; return e; }
+function el(tag,cls,txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!==undefined){ if(typeof txt==='string'&&txt.includes('<')) e.innerHTML=txt; else e.textContent=txt; } return e; }
 function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
 function showLoading(txt='Salvando...'){ document.getElementById('loading-txt').textContent=txt; document.getElementById('loading').style.display='flex'; }
 function hideLoading(){ document.getElementById('loading').style.display='none'; }
