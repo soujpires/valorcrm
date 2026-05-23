@@ -234,6 +234,14 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:#F3F4F6;color:
 .ltxt{font-size:13px;color:#9CA3AF;}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#111827;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:600;box-shadow:0 8px 24px rgba(0,0,0,.15);opacity:0;transition:opacity .2s;pointer-events:none;}
 .toast.show{opacity:1;}
+/* WhatsApp-style notification toasts */
+.notif-toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;z-index:700;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.notif-toast{background:#fff;border-radius:12px;padding:12px 14px;min-width:280px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.18);border-left:4px solid #2563EB;pointer-events:all;transform:translateX(120%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);opacity:0;}
+.notif-toast.show{transform:translateX(0);opacity:1;}
+.notif-toast.hide{transform:translateX(120%);opacity:0;}
+.notif-toast-icon{font-size:18px;margin-bottom:4px;}
+.notif-toast-title{font-size:13px;font-weight:600;color:#111827;margin-bottom:2px;}
+.notif-toast-sub{font-size:11px;color:#6B7280;}
 .nbell{position:relative;}
 .ndot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:#DC2626;border-radius:50%;border:2px solid #fff;display:none;}
 .npanel{position:absolute;top:calc(100% + 8px);right:0;width:300px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.1);z-index:300;display:none;}
@@ -429,6 +437,7 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:#F3F4F6;color:
 
 <div class="loading-ov" id="loading" style="display:none"><div class="spin"></div><div class="ltxt" id="loading-txt">Carregando...</div></div>
 <div class="toast" id="toast"></div>
+<div class="notif-toast-wrap" id="notif-toast-wrap"></div>
 
 <script>
 'use strict';
@@ -509,13 +518,18 @@ function doLogin(){
   if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; document.getElementById('sb-ferramentas').style.display='flex'; document.getElementById('view-select').value=viewFilter; }
   if(autoRefreshTimer) clearInterval(autoRefreshTimer);
   loadAndRender().then(()=>{
+    // Verifica tarefas vencendo hoje ao logar
+    setTimeout(()=>verificarTarefasVencendo(allLeads), 2000);
     autoRefreshTimer=setInterval(async()=>{
       const d=await apiLoad();
       // Só re-renderiza se os dados mudaram
       const newHash=JSON.stringify({leads:d.leads,columns:d.columns,notifications:d.notifications,closings:d.closings,globalTasks:d.globalTasks||[],customProds:d.customProds||[],customTags:d.customTags||[]});
       const oldHash=JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags});
       if(newHash===oldHash) return;
+      const leadsAntigosSnap=[...allLeads];
       allLeads=d.leads; columns=d.columns; notifications=d.notifications; closings=d.closings; globalTasks=d.globalTasks||[]; customProds=d.customProds||[]; customTags=d.customTags||[];
+      verificarNovosCards(allLeads, leadsAntigosSnap);
+      verificarNegociosGanhosOuPerdidos(allLeads, leadsAntigosSnap);
       renderAll(); renderNotifDot(); updateTasksBadge();
     },3000);
   });
@@ -1347,6 +1361,129 @@ document.getElementById('notif-btn').addEventListener('click',()=>{ const p=docu
 document.getElementById('notif-clear').addEventListener('click',async()=>{ notifications=notifications.filter(n=>n.for!==currentUser); await apiSave();renderNotifPanel();renderNotifDot();showToast('Notificações limpas.'); });
 document.addEventListener('click',e=>{ const p=document.getElementById('notif-panel'); const btn=document.getElementById('notif-btn'); if(p&&p.style.display==='block'&&!p.contains(e.target)&&!btn.contains(e.target)) p.style.display='none'; });
 function renderNotifDot(){ const mine=notifications.filter(n=>n.for===currentUser&&!n.read); document.getElementById('notif-dot').style.display=mine.length>0?'block':'none'; }
+
+// ── NOTIFICAÇÕES ESTILO WHATSAPP ──
+let lastLeadIds = null; // controle de novos cards
+
+function showNotifToast(icon, title, sub, color='#2563EB'){
+  const wrap = document.getElementById('notif-toast-wrap');
+  const toast = document.createElement('div');
+  toast.className = 'notif-toast';
+  toast.style.borderLeftColor = color;
+  toast.innerHTML = `<div class="notif-toast-icon">${icon}</div>
+    <div class="notif-toast-title">${title}</div>
+    ${sub ? `<div class="notif-toast-sub">${sub}</div>` : ''}`;
+  wrap.appendChild(toast);
+  // Animate in
+  setTimeout(()=>toast.classList.add('show'), 50);
+  // Animate out after 5s
+  setTimeout(()=>{
+    toast.classList.add('hide');
+    setTimeout(()=>toast.remove(), 400);
+  }, 5000);
+  // Click to dismiss
+  toast.addEventListener('click',()=>{
+    toast.classList.add('hide');
+    setTimeout(()=>toast.remove(), 400);
+  });
+}
+
+function verificarNovosCards(novosLeads, leadsAntigos){
+  if(!currentUser || !leadsAntigos) return;
+  const idsAntigos = new Set(leadsAntigos.map(l=>l.id));
+  const novos = novosLeads.filter(l=>!idsAntigos.has(l.id));
+  if(novos.length === 0) return;
+
+  // Separa por tipo
+  const viaFormulario = novos.filter(l=>l.formRespostas && l.formRespostas.length > 0);
+  const viaImportacao = novos.filter(l=>l.activities && l.activities[0]?.text?.includes('Relatório de Renovações'));
+  const viaCriacao = novos.filter(l=>!viaFormulario.includes(l) && !viaImportacao.includes(l));
+
+  // Formulário
+  viaFormulario.forEach(l=>{
+    const paraAdmin = true;
+    const paraNalberty = l.owner === 'nalberty';
+    if(currentUser === 'admin' && paraAdmin){
+      addNotification({for:'admin', text:`Novo card via formulário: ${l.name}`, leadId:l.id});
+      showNotifToast('📋', 'Novo card via formulário', l.name, '#7C3AED');
+    }
+    if(currentUser === 'nalberty' && paraNalberty){
+      addNotification({for:'nalberty', text:`Novo card via formulário: ${l.name}`, leadId:l.id});
+      showNotifToast('📋', 'Novo card via formulário', l.name, '#7C3AED');
+    }
+  });
+
+  // Importação renovações
+  if(viaImportacao.length > 0){
+    const meusImportados = viaImportacao.filter(l=>l.owner===currentUser);
+    if(currentUser === 'admin'){
+      addNotification({for:'admin', text:`${viaImportacao.length} cards de renovação importados`, leadId:null});
+      showNotifToast('🔄', `${viaImportacao.length} cards de renovação importados`, 'Relatório de Renovações', '#059669');
+    } else if(currentUser === 'nalberty' && meusImportados.length > 0){
+      addNotification({for:'nalberty', text:`${meusImportados.length} cards de renovação criados para você`, leadId:null});
+      showNotifToast('🔄', `${meusImportados.length} cards de renovação`, 'Atribuídos a você', '#059669');
+    }
+  }
+
+  // Criação manual
+  viaCriacao.forEach(l=>{
+    const criadoPor = l.activities?.[0]?.by || '';
+    const criadoPorNalberty = criadoPor === 'nalberty';
+    const atribuidoANalberty = l.owner === 'nalberty';
+
+    if(currentUser === 'admin' && criadoPorNalberty){
+      addNotification({for:'admin', text:`Nalberty criou um novo card: ${l.name}`, leadId:l.id});
+      showNotifToast('➕', 'Nalberty criou um novo card', l.name, '#2563EB');
+    }
+    if(currentUser === 'nalberty' && !criadoPorNalberty && atribuidoANalberty){
+      addNotification({for:'nalberty', text:`Novo card atribuído a você: ${l.name}`, leadId:l.id});
+      showNotifToast('➕', 'Novo card atribuído a você', l.name, '#2563EB');
+    }
+  });
+}
+
+function verificarTarefasVencendo(leads){
+  if(!currentUser) return;
+  const hoje = dateStr();
+  leads.forEach(l=>{
+    (l.tasks||[]).forEach(t=>{
+      if(t.done) return;
+      const donoDaLead = l.owner === currentUser;
+      if(!donoDaLead) return;
+      if(t.due && t.due === hoje){
+        showNotifToast('⏰', 'Tarefa vencendo hoje!', `${l.name} — ${t.text}`, '#F59E0B');
+      }
+    });
+  });
+}
+
+function addNotification(notif){
+  notifications.push({
+    id:'n'+Date.now()+Math.random().toString(36).substr(2,5),
+    text:notif.text,
+    when:`${dateStr()} · ${nowStr()}`,
+    for:notif.for,
+    read:false,
+    leadId:notif.leadId||null
+  });
+  renderNotifDot();
+}
+
+function verificarNegociosGanhosOuPerdidos(novosLeads, leadsAntigos){
+  if(!leadsAntigos || currentUser !== 'admin') return;
+  novosLeads.forEach(l=>{
+    const antigo = leadsAntigos.find(a=>a.id===l.id);
+    if(!antigo) return;
+    if(antigo.col !== 'ganho' && l.col === 'ganho'){
+      addNotification({for:'admin', text:`Negócio GANHO: ${l.name}`, leadId:l.id});
+      showNotifToast('🏆', 'Negócio Ganho!', l.name, '#059669');
+    }
+    if(antigo.col !== 'perdido' && l.col === 'perdido'){
+      addNotification({for:'admin', text:`Negócio PERDIDO: ${l.name}`, leadId:l.id});
+      showNotifToast('❌', 'Negócio Perdido', l.name, '#DC2626');
+    }
+  });
+}
 function renderNotifPanel(){
   const mine=notifications.filter(n=>n.for===currentUser).slice().reverse(); const list=document.getElementById('notif-list');
   if(mine.length===0){list.innerHTML='<div class="nempty">Sem notificações</div>';return;}
