@@ -1041,7 +1041,20 @@ function buildLeadModal(l){
   const fPhone=makeInp(l.phone||''); fPhone.placeholder='(00) 00000-0000'; grid.appendChild(makeField('Telefone',fPhone,true));
   // QUESTIONÁRIO DE RISCO as textarea
   const fInsType2=makeSel(INSURANCE_TYPES.map(t=>({id:t,name:t})),l.insuranceType||'Novo'); grid.appendChild(makeField('Tipo de Seguro',fInsType2));
-  const fObs=makeTa(l.obs||''); grid.appendChild(makeField('Questionário de Risco',fObs,true));
+  // Questionário de Risco + botão Ver Respostas
+  const obsWrap=el('div','fw'); obsWrap.style.gridColumn='1/-1';
+  const obsLblRow=el('div'); obsLblRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
+  const obsLbl=el('label','lbl','Questionário de Risco'); obsLbl.style.margin='0';
+  obsLblRow.appendChild(obsLbl);
+  if(l.formRespostas && l.formRespostas.length>0){
+    const verBtn=el('button'); verBtn.style.cssText='font-size:11px;font-weight:600;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:3px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;';
+    verBtn.innerHTML='<i class="ti ti-eye" style="font-size:13px;"></i> Ver respostas do formulário';
+    verBtn.addEventListener('click',e=>{ e.preventDefault(); abrirModalRespostas(l); });
+    obsLblRow.appendChild(verBtn);
+  }
+  obsWrap.appendChild(obsLblRow);
+  const fObs=makeTa(l.obs||''); fObs.style.gridColumn='1/-1'; obsWrap.appendChild(fObs);
+  grid.appendChild(obsWrap);
   // Tags
   left.appendChild(grid);
   left.appendChild(el('div','slbl','🏷️ Tags'));
@@ -2082,6 +2095,50 @@ async function importarRenovacoes(renovacoes, btn, panel){
   }
 }
 
+
+function abrirModalRespostas(l){
+  // Remove existing modal if any
+  const existing=document.getElementById('form-resp-modal');
+  if(existing) existing.remove();
+
+  const overlay=el('div'); overlay.id='form-resp-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+  const box=el('div'); box.style.cssText='background:#fff;border-radius:16px;width:min(580px,95vw);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);';
+
+  // Header
+  const hdr=el('div'); hdr.style.cssText='padding:1.25rem 1.5rem;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;justify-content:space-between;';
+  const htitle=el('div'); htitle.style.cssText='font-size:15px;font-weight:600;color:#111827;';
+  htitle.innerHTML='<i class="ti ti-clipboard-text" style="color:#2563EB;margin-right:6px;"></i> Respostas do Formulário';
+  const closeBtn=el('button'); closeBtn.innerHTML='<i class="ti ti-x"></i>'; closeBtn.style.cssText='background:none;border:none;font-size:18px;cursor:pointer;color:#6B7280;padding:4px;';
+  closeBtn.addEventListener('click',()=>overlay.remove());
+  hdr.appendChild(htitle); hdr.appendChild(closeBtn); box.appendChild(hdr);
+
+  // Respostas
+  const body=el('div'); body.style.cssText='padding:1.25rem 1.5rem;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;';
+  const respostas=l.formRespostas||[];
+  respostas.forEach(r=>{
+    const item=el('div'); item.style.cssText='background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:10px 12px;';
+    item.innerHTML=`<div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">${r.pergunta}</div>
+      <div style="font-size:13px;color:#111827;font-weight:500;">${r.resposta||'—'}</div>`;
+    body.appendChild(item);
+  });
+  box.appendChild(body);
+
+  // Footer com botão copiar tudo
+  const footer=el('div'); footer.style.cssText='padding:1rem 1.5rem;border-top:1px solid #E5E7EB;display:flex;gap:8px;';
+  const copyBtn=el('button','save-btn'); copyBtn.style.cssText='flex:1;';
+  copyBtn.innerHTML='<i class="ti ti-copy"></i> Copiar tudo formatado';
+  copyBtn.addEventListener('click',()=>{
+    const texto=respostas.map(r=>r.pergunta+':: '+r.resposta).join('\n');
+    navigator.clipboard.writeText(texto).then(()=>{ copyBtn.innerHTML='<i class="ti ti-check"></i> Copiado!'; setTimeout(()=>{ copyBtn.innerHTML='<i class="ti ti-copy"></i> Copiar tudo formatado'; },2000); });
+  });
+  footer.appendChild(copyBtn); box.appendChild(footer);
+
+  overlay.appendChild(box);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
 
 function closeRep(){ document.getElementById('rep-overlay').style.display='none'; }
 
