@@ -2047,8 +2047,9 @@ function renderConfig(){
   const body=document.getElementById('config-body'); body.innerHTML='';
 
   const sections=[
-    {id:'produtos', icon:'ti-package', title:'Produtos', sub:'Gerencie produtos padrão e personalizados', fn:renderProdutos},
-    {id:'tags',     icon:'ti-tag',     title:'Tags',     sub:'Crie e organize tags de categorização',    fn:renderTags},
+    {id:'produtos',    icon:'ti-package',  title:'Produtos',             sub:'Gerencie produtos padrão e personalizados', fn:renderProdutos},
+    {id:'tags',        icon:'ti-tag',       title:'Tags',                 sub:'Crie e organize tags de categorização',    fn:renderTags},
+    {id:'checklists',  icon:'ti-checkbox',  title:'Checklists Prontos',   sub:'Templates de checklist para o Operacional', fn:renderChecklistTemplates},
   ];
 
   sections.forEach(sec=>{
@@ -2081,6 +2082,66 @@ function renderConfig(){
       }
     });
   });
+}
+
+function renderChecklistTemplates(body){
+  const op=getOpData();
+  op.checklistTemplates=op.checklistTemplates||[];
+
+  function renderTpls(){
+    body.innerHTML='';
+    if(op.checklistTemplates.length===0){
+      body.appendChild(el('div','','Nenhum template criado ainda.'));
+    }
+    op.checklistTemplates.forEach((tpl,ti)=>{
+      const card=document.createElement('div');
+      card.style.cssText='border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--surface);';
+      const hdrRow=document.createElement('div'); hdrRow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+      const nm=el('div','',tpl.name); nm.style.cssText='font-size:13px;font-weight:600;color:var(--text1);flex:1;';
+      const delTpl=document.createElement('button');
+      delTpl.style.cssText='border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:13px;';
+      delTpl.innerHTML='<i class="ti ti-trash"></i>';
+      delTpl.addEventListener('click',()=>{ op.checklistTemplates.splice(ti,1); saveOpData(); renderTpls(); });
+      hdrRow.appendChild(nm); hdrRow.appendChild(delTpl); card.appendChild(hdrRow);
+
+      tpl.items.forEach((item,ii)=>{
+        const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12px;color:var(--text2);';
+        row.innerHTML=`<i class="ti ti-circle" style="font-size:11px;color:var(--text4);"></i>${item}`;
+        const delItem=document.createElement('button');
+        delItem.style.cssText='border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:11px;margin-left:auto;';
+        delItem.innerHTML='<i class="ti ti-x"></i>';
+        delItem.addEventListener('click',()=>{ tpl.items.splice(ii,1); saveOpData(); renderTpls(); });
+        row.appendChild(delItem); card.appendChild(row);
+      });
+
+      // Add item to template
+      const addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:6px;margin-top:8px;';
+      const addInp=document.createElement('input'); addInp.placeholder='Novo item...';
+      addInp.style.cssText='flex:1;border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
+      const addBtn=document.createElement('button');
+      addBtn.style.cssText='background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+      addBtn.textContent='+ Item';
+      addBtn.addEventListener('click',()=>{ const v=addInp.value.trim(); if(!v) return; tpl.items.push(v); addInp.value=''; saveOpData(); renderTpls(); });
+      addInp.addEventListener('keydown',e=>{ if(e.key==='Enter') addBtn.click(); });
+      addRow.appendChild(addInp); addRow.appendChild(addBtn); card.appendChild(addRow);
+      body.appendChild(card);
+    });
+
+    // Criar novo template
+    const newWrap=document.createElement('div'); newWrap.style.cssText='border:1.5px dashed var(--border);border-radius:10px;padding:12px 14px;margin-top:4px;';
+    newWrap.appendChild(el('div','op-side-label','Novo template'));
+    const nmRow=document.createElement('div'); nmRow.style.cssText='display:flex;gap:6px;';
+    const nmInp=document.createElement('input'); nmInp.placeholder='Nome do template...';
+    nmInp.style.cssText='flex:1;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
+    const nmBtn=document.createElement('button');
+    nmBtn.style.cssText='background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+    nmBtn.textContent='Criar';
+    nmBtn.addEventListener('click',()=>{ const n=nmInp.value.trim(); if(!n) return; op.checklistTemplates.push({id:'tpl-'+Date.now(),name:n,items:[]}); nmInp.value=''; saveOpData(); renderTpls(); });
+    nmInp.addEventListener('keydown',e=>{ if(e.key==='Enter') nmBtn.click(); });
+    nmRow.appendChild(nmInp); nmRow.appendChild(nmBtn); newWrap.appendChild(nmRow);
+    body.appendChild(newWrap);
+  }
+  renderTpls();
 }
 
 // ══════════════════════════════════════════════
@@ -2253,6 +2314,7 @@ function openOpCard(cardId, defaultColId){
   };
   if(!card) return;
   if(!card.activities) card.activities=[];
+  if(!card.checklist) card.checklist=[];
 
   const modal=document.getElementById('op-modal');
   const overlay=document.getElementById('op-overlay');
@@ -2274,23 +2336,21 @@ function openOpCard(cardId, defaultColId){
 
   const selStyle='border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
 
-  // ── TOOLBAR: Coluna · Prioridade · Etiquetas · Datas · Checklist · Excluir ──
+  // ── TOOLBAR ──
   const toolbar=document.createElement('div');
   toolbar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:.65rem 1.4rem;border-bottom:1px solid var(--border);background:var(--bg2);';
 
-  // Coluna select
   const colSel=document.createElement('select'); colSel.style.cssText=selStyle;
   op.columns.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===card.colId) o.selected=true; colSel.appendChild(o); });
 
-  // Prioridade select
   const priSel=document.createElement('select'); priSel.style.cssText=selStyle;
   ['','Alta','Média','Baixa'].forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p||'Prioridade'; if(p===card.priority) o.selected=true; priSel.appendChild(o); });
 
-  // Toggle buttons helper
-  const togglePanels={labels:false, date:false, checklist:false};
-  function mkToggleBtn(icon, label, key){
+  // toggle helper for labels/date
+  const togglePanels={labels:false,date:false};
+  function mkToggleBtn(icon,label,key){
     const btn=document.createElement('button');
-    btn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;transition:all .12s;';
+    btn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
     btn.innerHTML=`<i class="ti ti-${icon}" style="font-size:13px;"></i>${label}`;
     btn.addEventListener('click',()=>{
       togglePanels[key]=!togglePanels[key];
@@ -2304,12 +2364,16 @@ function openOpCard(cardId, defaultColId){
 
   const btnLab=mkToggleBtn('tag','Etiquetas','labels');
   const btnDate=mkToggleBtn('calendar','Datas','date');
-  const btnChk=mkToggleBtn('checkbox','Checklist','checklist');
+
+  // Importar Checklist
+  const btnImport=document.createElement('button');
+  btnImport.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+  btnImport.innerHTML='<i class="ti ti-clipboard-list" style="font-size:13px;"></i>Importar Checklist';
+  btnImport.addEventListener('click',()=>openImportChecklist(card, renderChecklistSection));
 
   toolbar.appendChild(colSel); toolbar.appendChild(priSel);
-  toolbar.appendChild(btnLab); toolbar.appendChild(btnDate); toolbar.appendChild(btnChk);
+  toolbar.appendChild(btnLab); toolbar.appendChild(btnDate); toolbar.appendChild(btnImport);
 
-  // Excluir (só cards existentes)
   if(!card._isNew){
     const sep=document.createElement('div'); sep.style.cssText='flex:1;';
     const delBtn=document.createElement('button');
@@ -2324,16 +2388,14 @@ function openOpCard(cardId, defaultColId){
   }
   modal.appendChild(toolbar);
 
-  // ── ÁREA DOS PAINÉIS TOGGLE (abaixo da toolbar) ──
+  // ── TOGGLE AREA (etiquetas / datas) ──
   const toggleArea=document.createElement('div');
-  toggleArea.style.cssText='padding:0 1.4rem;border-bottom:1px solid var(--border2);';
   modal.appendChild(toggleArea);
 
   function renderToggleArea(){
     toggleArea.innerHTML='';
-    toggleArea.style.padding=Object.values(togglePanels).some(Boolean)?'0 1.4rem':'0';
-    toggleArea.style.borderBottom=Object.values(togglePanels).some(Boolean)?'1px solid var(--border2)':'none';
-
+    const hasAny=Object.values(togglePanels).some(Boolean);
+    toggleArea.style.cssText=hasAny?'padding:0 1.4rem;border-bottom:1px solid var(--border2);':'';
     if(togglePanels.labels){
       const wrap=document.createElement('div'); wrap.style.cssText='padding:.65rem 0;display:flex;flex-wrap:wrap;gap:6px;';
       OP_COLORS.forEach(lc=>{
@@ -2348,82 +2410,123 @@ function openOpCard(cardId, defaultColId){
     }
     if(togglePanels.date){
       const wrap=document.createElement('div'); wrap.style.cssText='padding:.65rem 0;display:flex;align-items:center;gap:10px;';
-      const lbl=el('div','op-side-label','Data de entrega'); lbl.style.margin='0';
-      const inp=document.createElement('input'); inp.type='date'; inp.value=card.due?card.due.split('T')[0]:'';
+      wrap.appendChild(el('div','op-side-label','Data de entrega'));
+      const inp=document.createElement('input'); inp.type='date'; inp.value=card.due||'';
       inp.style.cssText=selStyle;
-      inp.addEventListener('change',()=>card.due=inp.value);
-      wrap.appendChild(lbl); wrap.appendChild(inp); toggleArea.appendChild(wrap);
-    }
-    if(togglePanels.checklist){
-      const wrap=document.createElement('div'); wrap.style.cssText='padding:.65rem 0;';
-      if(card.checklist&&card.checklist.length>0){
-        const done=card.checklist.filter(i=>i.done).length;
-        const pct=Math.round(done/card.checklist.length*100);
-        const bar=document.createElement('div'); bar.style.cssText='height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px;';
-        const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${pct}%;`;
-        bar.appendChild(fill); wrap.appendChild(bar);
-        wrap.appendChild(el('div','op-checklist-txt',`${done}/${card.checklist.length} — ${pct}%`));
-      }
-      const clList=document.createElement('div'); clList.style.marginTop='6px';
-      function renderCL(){
-        clList.innerHTML='';
-        (card.checklist||[]).forEach((item,i)=>{
-          const row=document.createElement('div'); row.className='op-checklist-item';
-          const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
-          cb.addEventListener('change',()=>{ card.checklist[i].done=cb.checked; renderToggleArea(); });
-          const txt=document.createElement('span'); txt.className='op-check-txt'+(item.done?' done':''); txt.textContent=item.text;
-          const del=document.createElement('button'); del.className='op-check-del'; del.innerHTML='<i class="ti ti-x"></i>';
-          del.addEventListener('click',()=>{ card.checklist.splice(i,1); renderToggleArea(); });
-          row.appendChild(cb); row.appendChild(txt); row.appendChild(del); clList.appendChild(row);
-        });
-        const addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:6px;margin-top:8px;';
-        const addInp=document.createElement('input'); addInp.placeholder='Novo item...';
-        addInp.style.cssText='flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
-        const addBtn=document.createElement('button');
-        addBtn.style.cssText='background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
-        addBtn.textContent='Add';
-        addBtn.addEventListener('click',()=>{ const v=addInp.value.trim(); if(!v) return; card.checklist=card.checklist||[]; card.checklist.push({text:v,done:false}); addInp.value=''; renderToggleArea(); });
-        addInp.addEventListener('keydown',e=>{ if(e.key==='Enter') addBtn.click(); });
-        addRow.appendChild(addInp); addRow.appendChild(addBtn); clList.appendChild(addRow);
-      }
-      renderCL(); wrap.appendChild(clList); toggleArea.appendChild(wrap);
+      inp.addEventListener('change',()=>{ card.due=inp.value; });
+      wrap.appendChild(inp); toggleArea.appendChild(wrap);
     }
   }
 
-  // ── BODY: esquerda = descrição + checklist | direita = follow-up ──
+  // ── BODY: esquerda = desc + checklist | direita = follow-up ──
   const body=document.createElement('div');
-  body.style.cssText='display:grid;grid-template-columns:1fr 280px;gap:0;flex:1;overflow:hidden;';
+  body.style.cssText='display:grid;grid-template-columns:1fr 280px;gap:0;flex:1;overflow:hidden;min-height:0;';
 
-  // ESQUERDA — Descrição sempre visível
+  // ESQUERDA
   const left=document.createElement('div');
-  left.style.cssText='display:flex;flex-direction:column;padding:1rem 1.4rem;overflow-y:auto;border-right:1px solid var(--border2);gap:10px;';
+  left.style.cssText='display:flex;flex-direction:column;padding:1rem 1.4rem;overflow-y:auto;border-right:1px solid var(--border2);gap:12px;';
+
+  // Descrição
   left.appendChild(el('div','sec-lbl','<i class="ti ti-align-left" style="font-size:13px;"></i> Descrição'));
   const descTA=document.createElement('textarea');
   descTA.value=card.desc||''; descTA.placeholder='Instruções, contexto e detalhes da tarefa...';
-  descTA.style.cssText='width:100%;min-height:160px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;line-height:1.5;';
+  descTA.style.cssText='width:100%;min-height:120px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;line-height:1.5;';
   descTA.addEventListener('input',()=>card.desc=descTA.value);
   left.appendChild(descTA);
+
+  // Checklist section
+  const clSection=document.createElement('div');
+  left.appendChild(clSection);
+
+  function renderChecklistSection(){
+    clSection.innerHTML='';
+    if(card.checklist.length===0){
+      // Só mostra o botão + para adicionar
+      const addOnlyRow=document.createElement('div'); addOnlyRow.style.cssText='display:flex;align-items:center;gap:6px;';
+      const addOnlyBtn=document.createElement('button');
+      addOnlyBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+      addOnlyBtn.innerHTML='<i class="ti ti-plus" style="font-size:13px;"></i> Adicionar checklist';
+      addOnlyBtn.addEventListener('click',()=>{ card.checklist.push({text:'',done:false}); renderChecklistSection(); });
+      addOnlyRow.appendChild(addOnlyBtn); clSection.appendChild(addOnlyRow);
+      return;
+    }
+
+    // Header do checklist com barra de progresso
+    const done=card.checklist.filter(i=>i.done).length;
+    const pct=Math.round(done/card.checklist.length*100);
+    const clHdr=document.createElement('div'); clHdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+    const clTitle=el('div','sec-lbl','<i class="ti ti-checkbox" style="font-size:13px;"></i> Checklist'); clTitle.style.margin='0;flex:1;';
+    const clPct=document.createElement('div'); clPct.style.cssText='font-size:11px;color:var(--text4);font-weight:600;';
+    clPct.textContent=`${done}/${card.checklist.length}`;
+    clHdr.appendChild(clTitle); clHdr.appendChild(clPct); clSection.appendChild(clHdr);
+
+    const bar=document.createElement('div'); bar.style.cssText='height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:10px;';
+    const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${pct}%;transition:width .25s;`;
+    bar.appendChild(fill); clSection.appendChild(bar);
+
+    // Items
+    card.checklist.forEach((item,i)=>{
+      if(item._editing){
+        // Edição inline
+        const row=document.createElement('div'); row.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
+        const editInp=document.createElement('input'); editInp.value=item.text;
+        editInp.style.cssText='flex:1;border:1px solid var(--blue);border-radius:6px;padding:5px 9px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
+        const okBtn=document.createElement('button');
+        okBtn.style.cssText='background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;';
+        okBtn.textContent='OK';
+        okBtn.addEventListener('click',()=>{ card.checklist[i].text=editInp.value.trim(); delete card.checklist[i]._editing; if(!card.checklist[i].text) card.checklist.splice(i,1); renderChecklistSection(); });
+        editInp.addEventListener('keydown',e=>{ if(e.key==='Enter') okBtn.click(); if(e.key==='Escape'){delete card.checklist[i]._editing; if(!item.text) card.checklist.splice(i,1); renderChecklistSection();} });
+        row.appendChild(editInp); row.appendChild(okBtn); clSection.appendChild(row);
+        setTimeout(()=>editInp.focus(),0);
+        return;
+      }
+      const row=document.createElement('div'); row.className='op-checklist-item';
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
+      cb.addEventListener('change',()=>{ card.checklist[i].done=cb.checked; renderChecklistSection(); });
+      const txt=document.createElement('span'); txt.className='op-check-txt'+(item.done?' done':''); txt.textContent=item.text;
+      txt.style.cursor='pointer';
+      txt.addEventListener('click',()=>{ card.checklist[i]._editing=true; renderChecklistSection(); });
+      const del=document.createElement('button'); del.className='op-check-del'; del.innerHTML='<i class="ti ti-x"></i>';
+      del.addEventListener('click',()=>{ card.checklist.splice(i,1); renderChecklistSection(); });
+      row.appendChild(cb); row.appendChild(txt); row.appendChild(del); clSection.appendChild(row);
+    });
+
+    // Botão + para adicionar item
+    const addBtn=document.createElement('button');
+    addBtn.style.cssText='display:flex;align-items:center;gap:5px;margin-top:6px;padding:4px 8px;border:none;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+    addBtn.innerHTML='<i class="ti ti-plus" style="font-size:12px;"></i> Adicionar item';
+    addBtn.addEventListener('click',()=>{ card.checklist.push({text:'',done:false,_editing:true}); renderChecklistSection(); });
+    clSection.appendChild(addBtn);
+  }
+  renderChecklistSection();
+
+  body.appendChild(left);
 
   // DIREITA — Follow-up
   const right=document.createElement('div');
   right.style.cssText='display:flex;flex-direction:column;padding:1rem 1.2rem;overflow-y:auto;gap:6px;';
   right.appendChild(el('div','sec-lbl','<i class="ti ti-message-dots" style="font-size:13px;"></i> Follow-up'));
-  const fuRow=el('div','fu-row');
-  const fuInp=el('input','fu-inp'); fuInp.placeholder='Mensagem... use @nalberty';
+
+  const fuWrap=document.createElement('div'); fuWrap.style.cssText='display:flex;gap:6px;margin-bottom:.5rem;align-items:flex-end;';
+  const fuTA=document.createElement('textarea'); fuTA.className='fu-inp';
+  fuTA.placeholder='Mensagem... use @nalberty para notificar';
+  fuTA.style.cssText='flex:1;min-height:60px;max-height:120px;resize:vertical;padding:9px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text1);outline:none;line-height:1.4;';
+  fuTA.addEventListener('focus',()=>fuTA.style.borderColor='var(--blue)');
+  fuTA.addEventListener('blur',()=>fuTA.style.borderColor='var(--border)');
   const fuBtn=el('button','fu-btn'); fuBtn.innerHTML='<i class="ti ti-send" style="color:#fff;font-size:16px;"></i>';
-  fuRow.appendChild(fuInp); fuRow.appendChild(fuBtn); right.appendChild(fuRow);
+  fuWrap.appendChild(fuTA); fuWrap.appendChild(fuBtn); right.appendChild(fuWrap);
 
   async function sendOpFu(){
-    const msg=(fuInp.value||'').trim(); if(!msg) return;
+    const msg=(fuTA.value||'').trim(); if(!msg) return;
     card.activities=card.activities||[];
     const isMention=msg.toLowerCase().includes('@nalberty');
     card.activities.push({type:isMention?'mention':'msg',text:msg,by:currentUser,when:`${dateStr()} · ${nowStr()}`});
     if(isMention && currentUser!=='nalberty') notifications.push({id:'n'+Date.now(),text:`${USERS[currentUser].name} mencionou você na tarefa "${card.title}": ${msg}`,when:`${dateStr()} · ${nowStr()}`,for:'nalberty',read:false});
-    fuInp.value=''; alist.innerHTML=''; renderActList(card.activities, alist);
+    fuTA.value=''; alist.innerHTML=''; renderActList(card.activities, alist);
     showLoading(); await apiSave(); hideLoading();
     showToast(isMention?'@Nalberty notificado!':'Follow-up registrado!');
   }
-  fuInp.addEventListener('keydown',e=>{ if(e.key==='Enter') sendOpFu(); });
+  fuTA.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendOpFu(); } });
   fuBtn.addEventListener('click',sendOpFu);
 
   right.appendChild(el('div','sec-lbl','Atividades'));
@@ -2431,7 +2534,7 @@ function openOpCard(cardId, defaultColId){
   renderActList(card.activities, alist);
   right.appendChild(alist);
 
-  body.appendChild(left); body.appendChild(right);
+  body.appendChild(right);
   modal.appendChild(body);
 
   // ── FOOTER ──
@@ -2445,10 +2548,16 @@ function openOpCard(cardId, defaultColId){
   saveBtn.textContent='Salvar';
   saveBtn.addEventListener('click',()=>{
     if(!titleInp.value.trim()){ titleInp.focus(); return; }
+    // Finaliza edições inline pendentes
+    card.checklist.forEach(i=>delete i._editing);
+    card.checklist=card.checklist.filter(i=>i.text);
     card.title=titleInp.value.trim();
-    card.desc=descTA.value.trim();
+    card.desc=descTA.value;
     card.colId=colSel.value;
     card.priority=priSel.value;
+    // Salva data do painel toggle se aberto
+    const dateInp=toggleArea.querySelector('input[type=date]');
+    if(dateInp) card.due=dateInp.value;
     if(card._isNew){ delete card._isNew; op.cards.push(card); }
     else{ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
     overlay.style.display='none'; saveOpData(); renderOpBoard();
@@ -2457,6 +2566,43 @@ function openOpCard(cardId, defaultColId){
 
   overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.style.display='none'; },{once:true});
   titleInp.focus();
+}
+
+// ── Importar checklist pré-pronto ──
+function openImportChecklist(card, onImport){
+  const op=getOpData();
+  const tpls=op.checklistTemplates||[];
+  if(tpls.length===0){ showToast('Nenhum template criado ainda. Vá em Configurações → Checklists Prontos.'); return; }
+
+  // Mini dropdown
+  document.querySelectorAll('.op-import-menu').forEach(d=>d.remove());
+  const menu=document.createElement('div'); menu.className='op-import-menu';
+  menu.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px var(--shadow);z-index:500;min-width:260px;padding:8px 0;max-height:320px;overflow-y:auto;';
+
+  const ttl=document.createElement('div'); ttl.style.cssText='padding:10px 16px 6px;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;';
+  ttl.textContent='Selecionar template'; menu.appendChild(ttl);
+
+  tpls.forEach(tpl=>{
+    const btn=document.createElement('button');
+    btn.style.cssText='width:100%;padding:10px 16px;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--text2);font-family:\'DM Sans\',sans-serif;text-align:left;display:flex;align-items:center;gap:8px;';
+    btn.innerHTML=`<i class="ti ti-clipboard-list" style="font-size:14px;color:var(--blue);"></i><div><div style="font-weight:500;">${tpl.name}</div><div style="font-size:11px;color:var(--text4);">${tpl.items.length} itens</div></div>`;
+    btn.addEventListener('mouseenter',()=>btn.style.background='var(--bg2)');
+    btn.addEventListener('mouseleave',()=>btn.style.background='transparent');
+    btn.addEventListener('click',()=>{
+      menu.remove();
+      card.checklist=card.checklist||[];
+      tpl.items.forEach(text=>{ if(!card.checklist.find(i=>i.text===text)) card.checklist.push({text,done:false}); });
+      onImport();
+    });
+    menu.appendChild(btn);
+  });
+
+  const cancelB=document.createElement('button');
+  cancelB.style.cssText='width:100%;padding:8px 16px;border:none;background:transparent;cursor:pointer;font-size:12px;color:var(--text4);font-family:\'DM Sans\',sans-serif;border-top:1px solid var(--border2);margin-top:4px;';
+  cancelB.textContent='Cancelar'; cancelB.addEventListener('click',()=>menu.remove());
+  menu.appendChild(cancelB);
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',e=>{ if(!menu.contains(e.target)) menu.remove(); },{once:true}),10);
 }
 
 // ── Nova coluna ──
