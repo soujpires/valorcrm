@@ -112,6 +112,76 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
 .op-label-dot{width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
 .op-label-dot.selected{border-color:var(--text1);transform:scale(1.2);}
 
+/* ── WHATSAPP ── */
+.wpp-layout{display:flex;flex:1;overflow:hidden;height:100%;}
+.wpp-sidebar{width:320px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);}
+.wpp-sb-hdr{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1rem;border-bottom:1px solid var(--border);flex-shrink:0;}
+.wpp-sb-title{font-size:15px;font-weight:600;color:var(--text1);display:flex;align-items:center;gap:8px;}
+.wpp-search-wrap{position:relative;padding:.5rem .75rem;flex-shrink:0;}
+.wpp-search-icon{position:absolute;left:1.25rem;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px;}
+.wpp-search{width:100%;border:1px solid var(--border);border-radius:999px;padding:7px 12px 7px 32px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text1);background:var(--bg2);outline:none;}
+.wpp-search:focus{border-color:var(--blue);}
+.wpp-status-bar{display:flex;align-items:center;gap:6px;padding:.4rem 1rem;font-size:11px;color:var(--text3);border-bottom:1px solid var(--border2);flex-shrink:0;}
+.wpp-status-dot{width:8px;height:8px;border-radius:50%;background:#9CA3AF;flex-shrink:0;}
+.wpp-status-dot.connected{background:#25D366;}
+.wpp-status-dot.disconnected{background:#DC2626;}
+.wpp-conv-list{flex:1;overflow-y:auto;}
+.wpp-conv-item{display:flex;align-items:center;gap:10px;padding:.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--border2);transition:background .1s;}
+.wpp-conv-item:hover{background:var(--bg2);}
+.wpp-conv-item.active{background:var(--blue-light);}
+.wpp-conv-item.unread .wpp-conv-name{font-weight:700;color:var(--text1);}
+.wpp-conv-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+.wpp-conv-info{flex:1;min-width:0;}
+.wpp-conv-name{font-size:13px;font-weight:500;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wpp-conv-preview{font-size:11.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.wpp-conv-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.wpp-conv-time{font-size:10px;color:var(--text4);}
+.wpp-unread-badge{background:#25D366;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center;}
+.wpp-empty{padding:2rem;text-align:center;color:var(--text4);font-size:13px;}
+.wpp-chat{flex:1;display:flex;flex-direction:column;background:var(--bg2);overflow:hidden;}
+.wpp-chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.wpp-chat-hdr{padding:.75rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.wpp-chat-av{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
+.wpp-chat-name{font-size:14px;font-weight:600;color:var(--text1);}
+.wpp-chat-num{font-size:11px;color:var(--text3);}
+.wpp-messages{flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:4px;}
+.wpp-messages::-webkit-scrollbar{width:4px;}
+.wpp-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.wpp-bubble-wrap{display:flex;margin-bottom:2px;}
+.wpp-bubble-wrap.out{justify-content:flex-end;}
+.wpp-bubble-wrap.in{justify-content:flex-start;}
+.wpp-bubble{max-width:65%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.45;word-break:break-word;}
+.wpp-bubble.out{background:#DCF8C6;color:#111;border-bottom-right-radius:3px;}
+html.dark .wpp-bubble.out{background:#1a4731;color:#e2f8ec;}
+.wpp-bubble.in{background:var(--surface);color:var(--text1);border-bottom-left-radius:3px;box-shadow:0 1px 2px var(--shadow);}
+.wpp-bubble-time{font-size:10px;color:#999;margin-top:3px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:3px;}
+.wpp-bubble.in .wpp-bubble-time{color:var(--text4);}
+.wpp-bubble-audio{display:flex;align-items:center;gap:8px;min-width:200px;}
+.wpp-audio-btn{width:32px;height:32px;border-radius:50%;background:#25D366;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;flex-shrink:0;}
+.wpp-audio-bar{flex:1;height:3px;background:rgba(0,0,0,.15);border-radius:2px;cursor:pointer;position:relative;}
+.wpp-audio-fill{height:100%;background:#25D366;border-radius:2px;width:0%;}
+.wpp-audio-speed{font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;user-select:none;}
+.wpp-bubble-img{max-width:100%;border-radius:8px;cursor:pointer;display:block;}
+.wpp-bubble-doc{display:flex;align-items:center;gap:8px;padding:6px;background:rgba(0,0,0,.05);border-radius:8px;cursor:pointer;text-decoration:none;color:inherit;}
+html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
+.wpp-bubble-doc i{font-size:26px;color:#DC2626;flex-shrink:0;}
+.wpp-bubble-doc-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.wpp-bubble-doc-size{font-size:10px;color:var(--text4);}
+.wpp-input-area{padding:.75rem 1rem;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:8px;flex-shrink:0;}
+.wpp-attach-btn{background:transparent;border:none;cursor:pointer;color:var(--text3);font-size:22px;padding:4px;display:flex;align-items:center;}
+.wpp-attach-btn:hover{color:var(--blue);}
+.wpp-msg-input{flex:1;border:1px solid var(--border);border-radius:20px;padding:9px 16px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text1);background:var(--bg2);outline:none;resize:none;max-height:120px;line-height:1.4;overflow-y:auto;}
+.wpp-msg-input:focus{border-color:var(--blue);}
+.wpp-send-btn{width:40px;height:40px;border-radius:50%;background:#25D366;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;}
+.wpp-send-btn:hover{background:#1ebe5d;}
+.wpp-send-btn:disabled{background:var(--border);cursor:not-allowed;}
+.wpp-date-divider{text-align:center;margin:8px 0;font-size:11px;color:var(--text4);}
+.wpp-date-divider span{background:var(--border2);padding:3px 10px;border-radius:999px;}
+.wpp-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:1.5rem;}
+.wpp-qr-img{width:220px;height:220px;border:1px solid var(--border);border-radius:8px;}
+.wpp-recording{display:flex;align-items:center;gap:8px;color:#DC2626;font-size:12px;font-weight:600;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
 #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg2);z-index:999;}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:2.5rem;width:360px;box-shadow:0 4px 12px var(--shadow);}
 .login-brand{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:2rem;}
@@ -486,6 +556,7 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
       <div class="sb-menu">
         <button class="sb-item active" data-page="pipeline"><i class="ti ti-layout-kanban"></i><span>Pipeline</span></button>
         <button class="sb-item" data-page="operacional" id="sb-operacional" style="display:none"><i class="ti ti-layout-board"></i><span>Operacional</span></button>
+        <button class="sb-item" data-page="whatsapp" id="sb-whatsapp" style="display:none"><i class="ti ti-brand-whatsapp"></i><span>WhatsApp</span><span class="sb-badge" id="wpp-badge" style="display:none">0</span></button>
         <button class="sb-item" data-page="ferramentas" id="sb-ferramentas" style="display:none"><i class="ti ti-cpu"></i><span>Ferramentas IA</span></button>
         <button class="sb-item" data-page="faturamento"><i class="ti ti-coin"></i><span>Faturamento</span></button>
         <button class="sb-item" data-page="tasks"><i class="ti ti-checkbox"></i><span>Tarefas</span><span class="sb-badge" id="tasks-badge" style="display:none">0</span></button>
@@ -540,6 +611,51 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);colo
         <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
           <div class="op-board" id="op-board"></div>
         </div>
+      </div>
+
+      <!-- WHATSAPP PAGE -->
+      <div class="tasks-page" id="whatsapp-page">
+        <div class="wpp-layout">
+          <!-- Lista de conversas -->
+          <div class="wpp-sidebar" id="wpp-sidebar">
+            <div class="wpp-sb-hdr">
+              <div class="wpp-sb-title"><i class="ti ti-brand-whatsapp" style="color:#25D366;font-size:20px;"></i> WhatsApp</div>
+              <div style="display:flex;gap:6px;">
+                <button class="ibtn" id="wpp-refresh-btn" title="Atualizar"><i class="ti ti-refresh"></i></button>
+                <button class="ibtn" id="wpp-config-btn" title="Configurações"><i class="ti ti-settings"></i></button>
+              </div>
+            </div>
+            <div class="wpp-search-wrap">
+              <i class="ti ti-search wpp-search-icon"></i>
+              <input class="wpp-search" id="wpp-search" placeholder="Pesquisar conversa...">
+            </div>
+            <div class="wpp-status-bar" id="wpp-status-bar">
+              <span class="wpp-status-dot" id="wpp-status-dot"></span>
+              <span id="wpp-status-txt">Verificando conexão...</span>
+            </div>
+            <div class="wpp-conv-list" id="wpp-conv-list">
+              <div class="wpp-empty">Nenhuma conversa ainda</div>
+            </div>
+          </div>
+          <!-- Chat -->
+          <div class="wpp-chat" id="wpp-chat">
+            <div class="wpp-chat-empty" id="wpp-chat-empty">
+              <i class="ti ti-brand-whatsapp" style="font-size:56px;color:#25D366;opacity:.3;"></i>
+              <div style="font-size:16px;font-weight:600;color:var(--text3);margin-top:12px;">Selecione uma conversa</div>
+              <div style="font-size:13px;color:var(--text4);margin-top:4px;">Suas mensagens aparecerão aqui</div>
+            </div>
+            <div class="wpp-chat-active" id="wpp-chat-active" style="display:none;flex-direction:column;height:100%;">
+              <div class="wpp-chat-hdr" id="wpp-chat-hdr"></div>
+              <div class="wpp-messages" id="wpp-messages"></div>
+              <div class="wpp-input-area" id="wpp-input-area"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHATSAPP CONFIG OVERLAY -->
+      <div class="overlay" id="wpp-cfg-overlay" style="display:none">
+        <div class="modal modal-sm" id="wpp-cfg-modal"></div>
       </div>
 
       <!-- TASKS PAGE -->
@@ -651,7 +767,7 @@ function doLogin(){
   document.getElementById('app').style.display='flex';
   const av=document.getElementById('hdr-av'); av.textContent=user.init; av.style.background=user.bg; av.style.color=user.color;
   document.getElementById('hdr-name').textContent=user.name;
-  if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; document.getElementById('sb-ferramentas').style.display='flex'; document.getElementById('sb-operacional').style.display='flex'; document.getElementById('view-select').value=viewFilter; }
+  if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; document.getElementById('sb-ferramentas').style.display='flex'; document.getElementById('sb-operacional').style.display='flex'; document.getElementById('sb-whatsapp').style.display='flex'; document.getElementById('view-select').value=viewFilter; }
   if(autoRefreshTimer) clearInterval(autoRefreshTimer);
   loadAndRender().then(()=>{
     // Verifica tarefas vencendo hoje ao logar
@@ -697,7 +813,8 @@ document.getElementById('sidebar').addEventListener('click', e=>{
   document.getElementById('config-page').classList.toggle('visible',page==='config');
   document.getElementById('ferramentas-page').classList.toggle('visible',page==='ferramentas');
   document.getElementById('operacional-page').classList.toggle('visible',page==='operacional');
-  const pageTitles={pipeline:'Pipeline Comercial',tasks:'Tarefas',config:'Configurações',ferramentas:'Ferramentas IA',faturamento:'Faturamento',operacional:'Operacional'};
+  document.getElementById('whatsapp-page').classList.toggle('visible',page==='whatsapp');
+  const pageTitles={pipeline:'Pipeline Comercial',tasks:'Tarefas',config:'Configurações',ferramentas:'Ferramentas IA',faturamento:'Faturamento',operacional:'Operacional',whatsapp:'WhatsApp'};
   document.getElementById('hdr-page').textContent=pageTitles[page]||page;
   document.getElementById('view-tabs').style.display=page==='pipeline'&&currentRole==='admin'?'flex':'none';
   document.getElementById('new-lead-btn').style.display=page==='pipeline'?'flex':'none';
@@ -706,6 +823,7 @@ document.getElementById('sidebar').addEventListener('click', e=>{
   if(page==='config') renderConfig();
   if(page==='ferramentas') renderFerramentas();
   if(page==='operacional') renderOpBoard();
+  if(page==='whatsapp') initWpp();
 });
 
 // ── VIEW FILTER ──
@@ -2688,6 +2806,271 @@ document.getElementById('new-op-task-btn').addEventListener('click',()=>{
   const op=getOpData();
   openOpCard(null, op.columns[0]?.id);
 });
+
+// ══════════════════════════════════════════════
+// ── WHATSAPP ──
+// ══════════════════════════════════════════════
+
+const WPP_API   = 'http://161.35.127.51:8080';
+const WPP_KEY   = 'valorcrm2025';
+const WPP_INST  = 'Valor-CRM';
+const WPP_HEADS = {'Content-Type':'application/json','apikey':WPP_KEY};
+
+let wppCurrentChat=null, wppChats=[], wppMsgCache={}, wppPollTimer=null, wppStatusTimer=null;
+let wppMediaRecorder=null, wppAudioChunks=[], wppRecording=false;
+
+function wppFmt(ts){ if(!ts) return ''; const d=new Date(ts*1000||ts); return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function wppFmtDate(ts){ if(!ts) return ''; const d=new Date(ts*1000||ts); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}); }
+function wppInitials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function wppColors(name){ const colors=['#2563EB','#059669','#D97706','#7C3AED','#DC2626','#0891B2']; let h=0; for(const c of name||'') h=(h*31+c.charCodeAt(0))%colors.length; return colors[Math.abs(h)]; }
+
+async function wppFetch(path, opts={}){
+  try{ const r=await fetch(WPP_API+path,{...opts,headers:{...WPP_HEADS,...(opts.headers||{})}}); return await r.json(); }
+  catch(e){ return null; }
+}
+
+async function initWpp(){
+  await checkWppStatus();
+  await loadWppChats();
+  clearInterval(wppPollTimer);
+  wppPollTimer=setInterval(()=>{ loadWppChats(); if(wppCurrentChat) loadWppMessages(wppCurrentChat,false); },8000);
+  clearInterval(wppStatusTimer);
+  wppStatusTimer=setInterval(checkWppStatus,30000);
+  document.getElementById('wpp-refresh-btn').onclick=()=>{ loadWppChats(); if(wppCurrentChat) loadWppMessages(wppCurrentChat,true); };
+  document.getElementById('wpp-config-btn').onclick=openWppConfig;
+  document.getElementById('wpp-search').oninput=e=>filterWppChats(e.target.value);
+}
+
+async function checkWppStatus(){
+  const dot=document.getElementById('wpp-status-dot');
+  const txt=document.getElementById('wpp-status-txt');
+  if(!dot) return;
+  const d=await wppFetch(`/instance/connectionState/${WPP_INST}`);
+  const state=d?.instance?.state||d?.state||'unknown';
+  if(state==='open'){ dot.className='wpp-status-dot connected'; txt.textContent='Conectado'; }
+  else if(state==='connecting'){ dot.className='wpp-status-dot'; txt.textContent='Conectando...'; }
+  else { dot.className='wpp-status-dot disconnected'; txt.textContent='Desconectado — clique em Configurações para conectar'; }
+}
+
+async function loadWppChats(){
+  const d=await wppFetch(`/chat/findChats/${WPP_INST}`,{method:'POST',body:JSON.stringify({})});
+  if(!d||!Array.isArray(d)) return;
+  wppChats=d.sort((a,b)=>(b.lastMessage?.messageTimestamp||0)-(a.lastMessage?.messageTimestamp||0));
+  renderWppChatList(wppChats);
+  updateWppBadge();
+}
+
+function updateWppBadge(){
+  const total=wppChats.reduce((s,c)=>s+(c.unreadCount||0),0);
+  const badge=document.getElementById('wpp-badge');
+  if(!badge) return;
+  badge.style.display=total>0?'inline':'none';
+  badge.textContent=total>9?'9+':total;
+}
+
+function filterWppChats(q){
+  const filtered=q?wppChats.filter(c=>(c.name||c.id?.user||'').toLowerCase().includes(q.toLowerCase())):wppChats;
+  renderWppChatList(filtered);
+}
+
+function renderWppChatList(chats){
+  const list=document.getElementById('wpp-conv-list'); if(!list) return; list.innerHTML='';
+  if(!chats.length){ list.innerHTML='<div class="wpp-empty">Nenhuma conversa</div>'; return; }
+  chats.forEach(chat=>{
+    const name=chat.name||chat.pushName||'+'+chat.id?.user||'';
+    const preview=chat.lastMessage?.message?.conversation||chat.lastMessage?.message?.extendedTextMessage?.text||'Mídia';
+    const ts=chat.lastMessage?.messageTimestamp;
+    const unread=chat.unreadCount||0;
+    const item=document.createElement('div');
+    item.className='wpp-conv-item'+(wppCurrentChat===chat.id?' active':'')+(unread>0?' unread':'');
+    const av=document.createElement('div'); av.className='wpp-conv-avatar'; av.style.background=wppColors(name); av.textContent=wppInitials(name);
+    const info=document.createElement('div'); info.className='wpp-conv-info';
+    info.innerHTML=`<div class="wpp-conv-name">${name}</div><div class="wpp-conv-preview">${preview}</div>`;
+    const meta=document.createElement('div'); meta.className='wpp-conv-meta';
+    meta.innerHTML=`<div class="wpp-conv-time">${ts?wppFmtDate(ts):''}</div>${unread>0?`<div class="wpp-unread-badge">${unread}</div>`:''}`;
+    item.appendChild(av); item.appendChild(info); item.appendChild(meta);
+    item.addEventListener('click',()=>openWppChat(chat, item));
+    list.appendChild(item);
+  });
+}
+
+async function openWppChat(chat, itemEl){
+  wppCurrentChat=chat.id;
+  document.getElementById('wpp-chat-empty').style.display='none';
+  const active=document.getElementById('wpp-chat-active'); active.style.display='flex';
+  const name=chat.name||chat.pushName||chat.id?.user||'';
+  const hdr=document.getElementById('wpp-chat-hdr'); hdr.innerHTML='';
+  const av=document.createElement('div'); av.className='wpp-chat-av'; av.style.background=wppColors(name); av.textContent=wppInitials(name);
+  const info=document.createElement('div');
+  info.innerHTML=`<div class="wpp-chat-name">${name}</div><div class="wpp-chat-num">+${chat.id?.user||''}</div>`;
+  hdr.appendChild(av); hdr.appendChild(info);
+  document.querySelectorAll('.wpp-conv-item').forEach(i=>i.classList.remove('active'));
+  if(itemEl) itemEl.classList.add('active');
+  buildWppInputArea(chat);
+  await wppFetch(`/chat/markMessageAsRead/${WPP_INST}`,{method:'POST',body:JSON.stringify({readMessages:[{id:chat.id,fromMe:false,participant:chat.id}]})});
+  await loadWppMessages(chat.id, true);
+}
+
+async function loadWppMessages(chatId, scroll=true){
+  const d=await wppFetch(`/chat/findMessages/${WPP_INST}`,{method:'POST',body:JSON.stringify({where:{key:{remoteJid:chatId}},limit:50})});
+  const msgs=d?.messages?.records||d?.records||d||[];
+  if(!Array.isArray(msgs)) return;
+  renderWppMessages(msgs, scroll);
+}
+
+function renderWppMessages(msgs, scroll){
+  const box=document.getElementById('wpp-messages'); if(!box) return; box.innerHTML='';
+  let lastDate='';
+  msgs.forEach(msg=>{
+    const ts=msg.messageTimestamp||msg.key?.timestamp;
+    const dateLabel=ts?new Date(ts*1000).toLocaleDateString('pt-BR'):'';
+    if(dateLabel&&dateLabel!==lastDate){ const dv=document.createElement('div'); dv.className='wpp-date-divider'; dv.innerHTML=`<span>${dateLabel}</span>`; box.appendChild(dv); lastDate=dateLabel; }
+    const wrap=document.createElement('div'); const fromMe=msg.key?.fromMe;
+    wrap.className='wpp-bubble-wrap '+(fromMe?'out':'in');
+    const bubble=document.createElement('div'); bubble.className='wpp-bubble '+(fromMe?'out':'in');
+    const mc=msg.message;
+    if(!mc){ return; }
+    if(mc.conversation||mc.extendedTextMessage){
+      const txt=mc.conversation||mc.extendedTextMessage?.text||'';
+      bubble.innerHTML=`<div>${txt.replace(/\n/g,'<br>')}</div>`;
+    } else if(mc.audioMessage){
+      const audioEl=new Audio(); let speeds=[1,1.5,2]; let si=0;
+      const aWrap=document.createElement('div'); aWrap.className='wpp-bubble-audio';
+      const playBtn=document.createElement('button'); playBtn.className='wpp-audio-btn'; playBtn.innerHTML='<i class="ti ti-player-play"></i>';
+      const barWrap=document.createElement('div'); barWrap.className='wpp-audio-bar';
+      const barFill=document.createElement('div'); barFill.className='wpp-audio-fill'; barWrap.appendChild(barFill);
+      const secs=mc.audioMessage.seconds||0;
+      const dur=document.createElement('span'); dur.style.cssText='font-size:10px;color:var(--text3);min-width:28px;'; dur.textContent=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
+      const spBtn=document.createElement('span'); spBtn.className='wpp-audio-speed'; spBtn.textContent='1x';
+      spBtn.addEventListener('click',()=>{ si=(si+1)%speeds.length; audioEl.playbackRate=speeds[si]; spBtn.textContent=speeds[si]+'x'; });
+      playBtn.addEventListener('click',async()=>{
+        if(!audioEl.src){ const md=await wppFetch(`/chat/getBase64FromMediaMessage/${WPP_INST}`,{method:'POST',body:JSON.stringify({message:{key:msg.key,message:mc},convertToMp4:false})}); if(md?.base64) audioEl.src=`data:audio/ogg;base64,${md.base64}`; }
+        if(audioEl.paused){ audioEl.play(); playBtn.innerHTML='<i class="ti ti-player-pause"></i>'; } else { audioEl.pause(); playBtn.innerHTML='<i class="ti ti-player-play"></i>'; }
+      });
+      audioEl.ontimeupdate=()=>{ if(audioEl.duration){ barFill.style.width=(audioEl.currentTime/audioEl.duration*100)+'%'; const r=audioEl.duration-audioEl.currentTime; dur.textContent=`${Math.floor(r/60)}:${String(Math.floor(r%60)).padStart(2,'0')}`; }};
+      audioEl.onended=()=>{ playBtn.innerHTML='<i class="ti ti-player-play"></i>'; barFill.style.width='0%'; };
+      aWrap.appendChild(playBtn); aWrap.appendChild(barWrap); aWrap.appendChild(dur); aWrap.appendChild(spBtn);
+      bubble.appendChild(aWrap);
+    } else if(mc.imageMessage){
+      const img=document.createElement('img'); img.className='wpp-bubble-img'; img.alt='Imagem';
+      img.src=mc.imageMessage.url||'';
+      img.addEventListener('click',async()=>{ if(!img.src.startsWith('data:')){ const md=await wppFetch(`/chat/getBase64FromMediaMessage/${WPP_INST}`,{method:'POST',body:JSON.stringify({message:{key:msg.key,message:mc}})}); if(md?.base64) img.src=`data:image/jpeg;base64,${md.base64}`; } window.open(img.src,'_blank'); });
+      bubble.appendChild(img);
+      if(mc.imageMessage.caption){ const cap=document.createElement('div'); cap.style.marginTop='4px'; cap.textContent=mc.imageMessage.caption; bubble.appendChild(cap); }
+    } else if(mc.documentMessage||mc.documentWithCaptionMessage){
+      const doc=mc.documentMessage||mc.documentWithCaptionMessage?.message?.documentMessage;
+      const a=document.createElement('a'); a.className='wpp-bubble-doc'; a.href='#';
+      let iconCls='ti-file'; if(doc?.mimetype?.includes('pdf')) iconCls='ti-file-type-pdf'; else if(doc?.mimetype?.includes('word')) iconCls='ti-file-type-doc'; else if(doc?.mimetype?.includes('sheet')||doc?.mimetype?.includes('excel')) iconCls='ti-file-type-xls';
+      a.innerHTML=`<i class="ti ${iconCls}" style="font-size:26px;color:#DC2626;flex-shrink:0;"></i><div><div class="wpp-bubble-doc-name">${doc?.fileName||'Documento'}</div><div class="wpp-bubble-doc-size">Toque para baixar</div></div>`;
+      a.addEventListener('click',async(e)=>{ e.preventDefault(); const md=await wppFetch(`/chat/getBase64FromMediaMessage/${WPP_INST}`,{method:'POST',body:JSON.stringify({message:{key:msg.key,message:mc}})}); if(md?.base64){ const lk=document.createElement('a'); lk.href=`data:${doc?.mimetype||'application/octet-stream'};base64,${md.base64}`; lk.download=doc?.fileName||'arquivo'; lk.click(); }});
+      bubble.appendChild(a);
+    } else { bubble.innerHTML='<span style="font-size:11px;opacity:.5;">Mensagem não suportada</span>'; }
+    const timeDiv=document.createElement('div'); timeDiv.className='wpp-bubble-time';
+    timeDiv.innerHTML=`${wppFmt(ts)}${fromMe?'<i class="ti ti-checks" style="font-size:11px;color:#53bdeb;"></i>':''}`;
+    bubble.appendChild(timeDiv); wrap.appendChild(bubble); box.appendChild(wrap);
+  });
+  if(scroll) setTimeout(()=>box.scrollTop=box.scrollHeight,50);
+}
+
+function buildWppInputArea(chat){
+  const area=document.getElementById('wpp-input-area'); if(!area) return; area.innerHTML='';
+  const fileInput=document.createElement('input'); fileInput.type='file'; fileInput.style.display='none';
+  fileInput.accept='image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt';
+  fileInput.addEventListener('change',()=>{ if(fileInput.files[0]) sendWppFile(chat.id,fileInput.files[0]); });
+  const attachBtn=document.createElement('button'); attachBtn.className='wpp-attach-btn'; attachBtn.title='Anexar';
+  attachBtn.innerHTML='<i class="ti ti-paperclip"></i>'; attachBtn.addEventListener('click',()=>fileInput.click());
+  const textarea=document.createElement('textarea'); textarea.className='wpp-msg-input'; textarea.placeholder='Digite uma mensagem...'; textarea.rows=1;
+  textarea.addEventListener('input',()=>{ textarea.style.height='auto'; textarea.style.height=Math.min(textarea.scrollHeight,120)+'px'; });
+  textarea.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendWppText(chat.id,textarea.value,textarea); }});
+  const micBtn=document.createElement('button'); micBtn.className='wpp-attach-btn'; micBtn.title='Gravar áudio';
+  micBtn.innerHTML='<i class="ti ti-microphone"></i>'; micBtn.addEventListener('click',()=>toggleWppRecording(chat.id,micBtn));
+  const sendBtn=document.createElement('button'); sendBtn.className='wpp-send-btn'; sendBtn.title='Enviar';
+  sendBtn.innerHTML='<i class="ti ti-send"></i>'; sendBtn.addEventListener('click',()=>sendWppText(chat.id,textarea.value,textarea));
+  area.appendChild(fileInput); area.appendChild(attachBtn); area.appendChild(textarea); area.appendChild(micBtn); area.appendChild(sendBtn);
+}
+
+async function sendWppText(chatId,text,textarea){
+  const msg=(text||'').trim(); if(!msg) return;
+  textarea.value=''; textarea.style.height='auto';
+  const d=await wppFetch(`/message/sendText/${WPP_INST}`,{method:'POST',body:JSON.stringify({number:chatId,textMessage:{text:msg}})});
+  if(d) { await loadWppMessages(chatId,true); await loadWppChats(); } else showToast('Erro ao enviar mensagem');
+}
+
+async function sendWppFile(chatId,file){
+  showLoading('Enviando arquivo...');
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    const base64=reader.result.split(',')[1]; const mime=file.type;
+    const body={number:chatId,mediaMessage:{mediatype:mime.startsWith('image/')?'image':'document',media:base64,fileName:file.name,mimetype:mime}};
+    const d=await wppFetch(`/message/sendMedia/${WPP_INST}`,{method:'POST',body:JSON.stringify(body)});
+    hideLoading();
+    if(d){ await loadWppMessages(chatId,true); await loadWppChats(); } else showToast('Erro ao enviar arquivo');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function toggleWppRecording(chatId,micBtn){
+  if(!wppRecording){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      wppAudioChunks=[]; wppMediaRecorder=new MediaRecorder(stream);
+      wppMediaRecorder.ondataavailable=e=>wppAudioChunks.push(e.data);
+      wppMediaRecorder.onstop=async()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        const blob=new Blob(wppAudioChunks,{type:'audio/ogg; codecs=opus'});
+        const reader=new FileReader();
+        reader.onload=async()=>{ const base64=reader.result.split(',')[1]; showLoading('Enviando áudio...'); await wppFetch(`/message/sendWhatsAppAudio/${WPP_INST}`,{method:'POST',body:JSON.stringify({number:chatId,audioMessage:{audio:base64,encoding:true}})}); hideLoading(); await loadWppMessages(chatId,true); };
+        reader.readAsDataURL(blob);
+      };
+      wppMediaRecorder.start(); wppRecording=true;
+      micBtn.innerHTML='<i class="ti ti-microphone-off" style="color:#DC2626;"></i>';
+    } catch(e){ showToast('Permissão de microfone negada'); }
+  } else { wppMediaRecorder?.stop(); wppRecording=false; micBtn.innerHTML='<i class="ti ti-microphone"></i>'; }
+}
+
+async function openWppConfig(){
+  const overlay=document.getElementById('wpp-cfg-overlay');
+  const modal=document.getElementById('wpp-cfg-modal');
+  overlay.style.display='flex'; modal.innerHTML='';
+  const hdr=document.createElement('div'); hdr.className='modal-hdr';
+  const title=el('div','modal-title','Configurações WhatsApp'); const hdrInfo=el('div'); hdrInfo.style.flex='1'; hdrInfo.appendChild(title);
+  const closeBtn=el('button','modal-close',''); closeBtn.innerHTML='<i class="ti ti-x"></i>'; closeBtn.addEventListener('click',()=>overlay.style.display='none');
+  hdr.appendChild(hdrInfo); hdr.appendChild(closeBtn); modal.appendChild(hdr);
+  const body=document.createElement('div'); body.style.cssText='padding:1.25rem;display:flex;flex-direction:column;gap:14px;';
+  const statusWrap=document.createElement('div'); statusWrap.style.cssText='display:flex;align-items:center;gap:8px;';
+  const dot=document.createElement('div'); dot.className='wpp-status-dot';
+  const statusTxt=document.createElement('div'); statusTxt.style.fontSize='13px'; statusTxt.textContent='Verificando...';
+  statusWrap.appendChild(dot); statusWrap.appendChild(statusTxt); body.appendChild(statusWrap);
+  const qrWrap=document.createElement('div'); qrWrap.className='wpp-qr-wrap'; body.appendChild(qrWrap);
+  const btnRow=document.createElement('div'); btnRow.style.cssText='display:flex;gap:8px;';
+  const connectBtn=document.createElement('button');
+  connectBtn.style.cssText='flex:1;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;';
+  connectBtn.innerHTML='<i class="ti ti-qrcode"></i> Gerar QR Code';
+  connectBtn.addEventListener('click',()=>loadWppQR(qrWrap,dot,statusTxt));
+  const discBtn=document.createElement('button');
+  discBtn.style.cssText='padding:9px 14px;background:transparent;color:#DC2626;border:1px solid #FCA5A5;border-radius:8px;font-size:13px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+  discBtn.textContent='Desconectar';
+  discBtn.addEventListener('click',async()=>{ if(!confirm('Desconectar?')) return; await wppFetch(`/instance/logout/${WPP_INST}`,{method:'DELETE'}); showToast('Desconectado'); overlay.style.display='none'; checkWppStatus(); });
+  btnRow.appendChild(connectBtn); btnRow.appendChild(discBtn); body.appendChild(btnRow); modal.appendChild(body);
+  const d=await wppFetch(`/instance/connectionState/${WPP_INST}`);
+  const state=d?.instance?.state||d?.state||'unknown';
+  if(state==='open'){ dot.className='wpp-status-dot connected'; statusTxt.textContent='Conectado!'; qrWrap.innerHTML='<i class="ti ti-circle-check" style="font-size:48px;color:#25D366;"></i><div style="font-size:14px;color:var(--text2);margin-top:8px;">WhatsApp conectado</div>'; }
+  else { dot.className='wpp-status-dot disconnected'; statusTxt.textContent='Desconectado'; qrWrap.innerHTML='<div style="font-size:13px;color:var(--text3);">Clique em "Gerar QR Code" para conectar</div>'; }
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.style.display='none'; },{once:true});
+}
+
+async function loadWppQR(qrWrap,dot,statusTxt){
+  qrWrap.innerHTML='<div style="font-size:13px;color:var(--text3);">Gerando QR Code...</div>';
+  const d=await wppFetch(`/instance/connect/${WPP_INST}`);
+  const b64=d?.base64||d?.qrcode?.base64;
+  if(b64){
+    const img=document.createElement('img'); img.className='wpp-qr-img'; img.src=b64.startsWith('data:')?b64:`data:image/png;base64,${b64}`;
+    const tip=document.createElement('div'); tip.style.cssText='font-size:12px;color:var(--text3);text-align:center;'; tip.textContent='Abra o WhatsApp → Aparelhos conectados → Conectar aparelho';
+    qrWrap.innerHTML=''; qrWrap.appendChild(img); qrWrap.appendChild(tip);
+    dot.className='wpp-status-dot'; statusTxt.textContent='Aguardando leitura...';
+    let tries=0; const check=setInterval(async()=>{ tries++; const s=await wppFetch(`/instance/connectionState/${WPP_INST}`); if((s?.instance?.state||s?.state)==='open'){ clearInterval(check); dot.className='wpp-status-dot connected'; statusTxt.textContent='Conectado!'; qrWrap.innerHTML='<i class="ti ti-circle-check" style="font-size:48px;color:#25D366;"></i><div style="font-size:14px;color:var(--text2);margin-top:8px;">Conectado com sucesso!</div>'; checkWppStatus(); loadWppChats(); } if(tries>=20) clearInterval(check); },3000);
+  } else { qrWrap.innerHTML='<div style="font-size:13px;color:#DC2626;">Erro ao gerar QR Code.</div>'; }
+}
 
 (function initTheme(){
   const saved=localStorage.getItem('vcrm-theme')||'light';
