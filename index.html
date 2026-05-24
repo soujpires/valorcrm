@@ -742,13 +742,15 @@ async function apiLoad(){
   try{
     const r=await fetch(`${JSONBIN_URL}/${BIN_ID}/latest`,{headers:{'X-Master-Key':JSONBIN_KEY}});
     const d=await r.json();
+    // Só atualiza _opData se JSONBin tiver dados — nunca sobrescreve com null
     if(d.record?.opData) window._opData=d.record.opData;
-    return{ leads:d.record?.leads||[], columns:d.record?.columns||DEF_COLS, notifications:d.record?.notifications||[], closings:d.record?.closings||[], globalTasks:d.record?.globalTasks||[], customProds:d.record?.customProds||[], customTags:d.record?.customTags||[] };
+    return{ leads:d.record?.leads||[], columns:d.record?.columns||DEF_COLS, notifications:d.record?.notifications||[], closings:d.record?.closings||[], globalTasks:d.record?.globalTasks||[], customProds:d.record?.customProds||[], customTags:d.record?.customTags||[], opData:d.record?.opData||null };
   }catch(e){ showToast('Erro ao carregar.'); return{leads:[],columns:DEF_COLS,notifications:[],closings:[],globalTasks:[]}; }
 }
 async function apiSave(){
   try{
-    const opData=window._opData||null;
+    // Garante que opData sempre é salvo, mesmo que seja o default
+    const opData=window._opData||getOpData();
     await fetch(`${JSONBIN_URL}/${BIN_ID}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},body:JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags,opData})});
   }catch(e){ showToast('Erro ao salvar.'); }
 }
@@ -781,8 +783,11 @@ function doLogin(){
       const leadsAntigosSnap=allLeads.map(l=>({...l,tasks:(l.tasks||[]).map(t=>({...t}))}));
       const closingsAntigosSnap=[...closings];
       allLeads=d.leads; columns=d.columns; notifications=d.notifications; closings=d.closings; globalTasks=d.globalTasks||[]; customProds=d.customProds||[]; customTags=d.customTags||[];
+      // Atualiza opData só se veio do servidor e for diferente do atual
+      if(d.opData) window._opData=d.opData;
       detectarMudancas(leadsAntigosSnap, allLeads, [], [], closingsAntigosSnap, closings);
       renderAll(); renderNotifDot(); updateTasksBadge();
+      if(currentPage==='operacional') renderOpBoard();
     },3000);
   });
 }
