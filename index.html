@@ -2884,9 +2884,11 @@ async function checkWppStatus(){
 }
 
 async function loadWppChats(){
-  const d=await wppFetch(`/chat/findChats/${WPP_INST}`,{method:'POST',body:JSON.stringify({})});
-  if(!d||!Array.isArray(d)) return;
-  wppChats=d.sort((a,b)=>(b.lastMessage?.messageTimestamp||0)-(a.lastMessage?.messageTimestamp||0));
+  const d=await wppFetch(`/chat/findChats/${WPP_INST}`);
+  if(!d) return;
+  const chats=Array.isArray(d)?d:(d.chats||d.data||[]);
+  if(!Array.isArray(chats)||!chats.length) return;
+  wppChats=chats.sort((a,b)=>(b.lastMessage?.messageTimestamp||b.updatedAt||0)-(a.lastMessage?.messageTimestamp||a.updatedAt||0));
   renderWppChatList(wppChats);
   updateWppBadge();
 }
@@ -2900,25 +2902,31 @@ function updateWppBadge(){
 }
 
 function filterWppChats(q){
-  const filtered=q?wppChats.filter(c=>(c.name||c.id?.user||'').toLowerCase().includes(q.toLowerCase())):wppChats;
+  const filtered=q?wppChats.filter(c=>(c.name||c.pushName||c.id?.user||'').toLowerCase().includes(q.toLowerCase())):wppChats;
   renderWppChatList(filtered);
 }
 
 function renderWppChatList(chats){
   const list=document.getElementById('wpp-conv-list'); if(!list) return; list.innerHTML='';
-  if(!chats.length){ list.innerHTML='<div class="wpp-empty">Nenhuma conversa</div>'; return; }
+  if(!chats.length){ list.innerHTML='<div class="wpp-empty">Nenhuma conversa ainda.<br>Conecte seu WhatsApp nas configurações.</div>'; return; }
   chats.forEach(chat=>{
-    const name=chat.name||chat.pushName||'+'+chat.id?.user||'';
-    const preview=chat.lastMessage?.message?.conversation||chat.lastMessage?.message?.extendedTextMessage?.text||'Mídia';
-    const ts=chat.lastMessage?.messageTimestamp;
+    const chatId=chat.id?.user||chat.id||'';
+    const name=chat.name||chat.pushName||'+'+chatId||'Desconhecido';
+    const lastMsg=chat.lastMessage?.message;
+    const preview=lastMsg?.conversation||lastMsg?.extendedTextMessage?.text||lastMsg?.audioMessage?'🎵 Áudio':lastMsg?.imageMessage?'📷 Imagem':lastMsg?.documentMessage?'📄 Documento':'';
+    const ts=chat.lastMessage?.messageTimestamp||chat.updatedAt;
     const unread=chat.unreadCount||0;
     const item=document.createElement('div');
     item.className='wpp-conv-item'+(wppCurrentChat===chat.id?' active':'')+(unread>0?' unread':'');
     const av=document.createElement('div'); av.className='wpp-conv-avatar'; av.style.background=wppColors(name); av.textContent=wppInitials(name);
     const info=document.createElement('div'); info.className='wpp-conv-info';
-    info.innerHTML=`<div class="wpp-conv-name">${name}</div><div class="wpp-conv-preview">${preview}</div>`;
+    const nm=document.createElement('div'); nm.className='wpp-conv-name'; nm.textContent=name;
+    const pv=document.createElement('div'); pv.className='wpp-conv-preview'; pv.textContent=preview||'';
+    info.appendChild(nm); info.appendChild(pv);
     const meta=document.createElement('div'); meta.className='wpp-conv-meta';
-    meta.innerHTML=`<div class="wpp-conv-time">${ts?wppFmtDate(ts):''}</div>${unread>0?`<div class="wpp-unread-badge">${unread}</div>`:''}`;
+    const timeDiv=document.createElement('div'); timeDiv.className='wpp-conv-time'; timeDiv.textContent=ts?wppFmtDate(ts):'';
+    meta.appendChild(timeDiv);
+    if(unread>0){ const badge=document.createElement('div'); badge.className='wpp-unread-badge'; badge.textContent=unread>9?'9+':unread; meta.appendChild(badge); }
     item.appendChild(av); item.appendChild(info); item.appendChild(meta);
     item.addEventListener('click',()=>openWppChat(chat, item));
     list.appendChild(item);
@@ -2933,19 +2941,24 @@ async function openWppChat(chat, itemEl){
   const hdr=document.getElementById('wpp-chat-hdr'); hdr.innerHTML='';
   const av=document.createElement('div'); av.className='wpp-chat-av'; av.style.background=wppColors(name); av.textContent=wppInitials(name);
   const info=document.createElement('div');
-  info.innerHTML=`<div class="wpp-chat-name">${name}</div><div class="wpp-chat-num">+${chat.id?.user||''}</div>`;
+  const nm=document.createElement('div'); nm.className='wpp-chat-name'; nm.textContent=name;
+  const num=document.createElement('div'); num.className='wpp-chat-num'; num.textContent='+'+(chat.id?.user||'');
+  info.appendChild(nm); info.appendChild(num);
   hdr.appendChild(av); hdr.appendChild(info);
   document.querySelectorAll('.wpp-conv-item').forEach(i=>i.classList.remove('active'));
   if(itemEl) itemEl.classList.add('active');
   buildWppInputArea(chat);
-  await wppFetch(`/chat/markMessageAsRead/${WPP_INST}`,{method:'POST',body:JSON.stringify({readMessages:[{id:chat.id,fromMe:false,participant:chat.id}]})});
+  await wppFetch(`/chat/markMessageAsRead/${WPP_INST}`,{method:'POST',body:JSON.stringify({readMessages:[{id:chat.id?.user||chat.id,fromMe:false}]})});
   await loadWppMessages(chat.id, true);
 }
 
 async function loadWppMessages(chatId, scroll=true){
-  const d=await wppFetch(`/chat/findMessages/${WPP_INST}`,{method:'POST',body:JSON.stringify({where:{key:{remoteJid:chatId}},limit:50})});
-  const msgs=d?.messages?.records||d?.records||d||[];
+  const remoteJid=typeof chatId==='object'?chatId._serialized||chatId.user:chatId;
+  const d=await wppFetch(`/chat/findMessages/${WPP_INST}`,{method:'POST',body:JSON.stringify({where:{key:{remoteJid}},limit:50})});
+  const msgs=d?.messages?.records||d?.records||d?.messages||[];
   if(!Array.isArray(msgs)) return;
+  // Ordena por timestamp crescente (mais antiga primeiro)
+  msgs.sort((a,b)=>(a.messageTimestamp||0)-(b.messageTimestamp||0));
   renderWppMessages(msgs, scroll);
 }
 
@@ -3023,7 +3036,7 @@ function buildWppInputArea(chat){
 async function sendWppText(chatId,text,textarea){
   const msg=(text||'').trim(); if(!msg) return;
   textarea.value=''; textarea.style.height='auto';
-  const d=await wppFetch(`/message/sendText/${WPP_INST}`,{method:'POST',body:JSON.stringify({number:chatId,textMessage:{text:msg}})});
+  const d=await wppFetch(`/message/sendText/${WPP_INST}`,{method:'POST',body:JSON.stringify({number:chatId,options:{delay:1200},textMessage:{text:msg}})});
   if(d) { await loadWppMessages(chatId,true); await loadWppChats(); } else showToast('Erro ao enviar mensagem');
 }
 
@@ -3050,7 +3063,7 @@ async function toggleWppRecording(chatId,micBtn){
         stream.getTracks().forEach(t=>t.stop());
         const blob=new Blob(wppAudioChunks,{type:'audio/ogg; codecs=opus'});
         const reader=new FileReader();
-        reader.onload=async()=>{ const base64=reader.result.split(',')[1]; showLoading('Enviando áudio...'); await wppFetch(`/message/sendWhatsAppAudio/${WPP_INST}`,{method:'POST',body:JSON.stringify({number:chatId,audioMessage:{audio:base64,encoding:true}})}); hideLoading(); await loadWppMessages(chatId,true); };
+        reader.onload=async()=>{ const base64=reader.result.split(',')[1]; showLoading('Enviando áudio...'); await wppFetch(`/message/sendWhatsAppAudio/${WPP_INST}`,{method:'POST',body:JSON.stringify({number:chatId,options:{delay:1200},audioMessage:{audio:base64,encoding:true}})}); hideLoading(); await loadWppMessages(chatId,true); };
         reader.readAsDataURL(blob);
       };
       wppMediaRecorder.start(); wppRecording=true;
