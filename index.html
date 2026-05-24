@@ -1190,7 +1190,7 @@ function renderActList(activitiesArr, container){
       const ai=el('div','act-item'); const ico=el('div',`act-ico ${cls}`); ico.innerHTML=`<i class="ti ${icon}" style="font-size:11px;"></i>`;
       const ac=el('div'); ac.appendChild(el('div','act-when',a.when));
       if(a.type==='link'){ ac.appendChild(el('div','act-txt',a.label||'Cotação')); const lnk=document.createElement('a'); lnk.href=a.text; lnk.target='_blank'; lnk.rel='noopener'; lnk.textContent='Abrir link →'; lnk.style.cssText='font-size:12px;color:var(--blue);font-weight:500;display:block;margin-top:2px;'; ac.appendChild(lnk); }
-      else ac.appendChild(el('div','act-txt',a.text));
+      else { const atxt=el('div','act-txt'); atxt.innerHTML=(a.text||'').replace(/\n/g,'<br>'); ac.appendChild(atxt); }
       if(a.by) ac.appendChild(el('div','act-by',`por ${USERS[a.by]?.name||a.by}`));
       ai.appendChild(ico); ai.appendChild(ac); container.appendChild(ai);
     });
@@ -2460,9 +2460,11 @@ function openOpCard(cardId, defaultColId){
 
   const colSel=document.createElement('select'); colSel.style.cssText=selStyle;
   op.columns.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===card.colId) o.selected=true; colSel.appendChild(o); });
+  colSel.addEventListener('change',()=>{ card.colId=colSel.value; });
 
   const priSel=document.createElement('select'); priSel.style.cssText=selStyle;
   ['','Alta','Média','Baixa'].forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p||'Prioridade'; if(p===card.priority) o.selected=true; priSel.appendChild(o); });
+  priSel.addEventListener('change',()=>{ card.priority=priSel.value; });
 
   // toggle helper for labels/date
   const togglePanels={labels:false,date:false};
@@ -2641,6 +2643,8 @@ function openOpCard(cardId, defaultColId){
     card.activities.push({type:isMention?'mention':'msg',text:msg,by:currentUser,when:`${dateStr()} · ${nowStr()}`});
     if(isMention && currentUser!=='nalberty') notifications.push({id:'n'+Date.now(),text:`${USERS[currentUser].name} mencionou você na tarefa "${card.title}": ${msg}`,when:`${dateStr()} · ${nowStr()}`,for:'nalberty',read:false});
     fuTA.value=''; alist.innerHTML=''; renderActList(card.activities, alist);
+    // Salva imediatamente
+    if(!card._isNew){ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
     showLoading(); await apiSave(); hideLoading();
     showToast(isMention?'@Nalberty notificado!':'Follow-up registrado!');
   }
@@ -2666,16 +2670,11 @@ function openOpCard(cardId, defaultColId){
   saveBtn.textContent='Salvar';
   saveBtn.addEventListener('click',()=>{
     if(!titleInp.value.trim()){ titleInp.focus(); return; }
-    // Finaliza edições inline pendentes
     card.checklist.forEach(i=>delete i._editing);
     card.checklist=card.checklist.filter(i=>i.text);
     card.title=titleInp.value.trim();
     card.desc=descTA.value;
-    card.colId=colSel.value;
-    card.priority=priSel.value;
-    // Salva data do painel toggle se aberto
-    const dateInp=toggleArea.querySelector('input[type=date]');
-    if(dateInp) card.due=dateInp.value;
+    // colId, priority, due já estão sendo atualizados live nos listeners acima
     if(card._isNew){ delete card._isNew; op.cards.push(card); }
     else{ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
     overlay.style.display='none'; saveOpData(); renderOpBoard();
