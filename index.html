@@ -966,33 +966,45 @@ function buildCard(l, accentColor){
   if(l.dealName){ card.appendChild(el('div','card-deal',l.dealName)); }
   card.appendChild(el('div','card-prod',(l.insuranceType?`${l.product||'—'} · ${l.insuranceType}`:l.product||'—')));
   if(upcoming){ const dt=el('div','task-due-tag'); dt.innerHTML=`<i class="ti ti-clock" style="font-size:10px;"></i> ${fmtDue(upcoming.due)}`; card.appendChild(dt); }
-  // Tags — fita dobrada no canto superior direito
+  // Tags — fita dobrada no canto superior direito + bolinhas ao lado esquerdo
   if(l.tags&&l.tags.length){
-    const ribbonWrap=el('div','card-ribbon-wrap');
-    // Mostra a primeira tag como fita principal
     const firstTag=l.tags[0];
     const ct=customTags.find(x=>x.id===firstTag.id)||firstTag;
     const tc=getTagColor(ct.color||firstTag.color);
     const shortName=(ct.name||firstTag.name||'').substring(0,8);
+
+    // Wrapper da fita (overflow hidden para não vazar)
+    const ribbonWrap=el('div','card-ribbon-wrap');
+    ribbonWrap.style.cssText='position:absolute;top:0;right:0;width:56px;height:56px;overflow:hidden;pointer-events:none;z-index:2;';
     const ribbon=el('div','card-ribbon');
-    ribbon.style.cssText=`position:absolute;top:10px;right:-18px;width:70px;padding:4px 0;font-size:8px;font-weight:700;text-align:center;letter-spacing:.04em;transform:rotate(45deg);transform-origin:center;cursor:default;line-height:1.2;background:${tc.dot};color:#fff;`;
+    ribbon.style.cssText=`position:absolute;top:10px;right:-18px;width:72px;padding:4px 0;font-size:8px;font-weight:700;text-align:center;letter-spacing:.04em;transform:rotate(45deg);transform-origin:center;line-height:1.2;background:${tc.dot};color:#fff;`;
     ribbon.textContent=shortName;
-    // Tooltip com nome completo (e demais tags)
-    const allNames=l.tags.map(t=>{ const ctt=customTags.find(x=>x.id===t.id)||t; return ctt.name||t.name; }).join(', ');
-    ribbon.title=allNames;
     ribbonWrap.appendChild(ribbon);
     card.appendChild(ribbonWrap);
-    // Se tiver mais de 1 tag, mostra pontinhos extras
+
+    // Tooltip da fita principal (JS hover)
+    const fullName=ct.name||firstTag.name||'';
+    const tooltipId='tt-'+l.id+'-0';
+    ribbonWrap.style.pointerEvents='all';
+    ribbonWrap.style.cursor='default';
+    ribbonWrap.addEventListener('mouseenter',e=>showTagTooltip(e, fullName, tc.dot, tooltipId));
+    ribbonWrap.addEventListener('mouseleave',()=>hideTagTooltip(tooltipId));
+
+    // Bolinhas das tags adicionais — ao lado esquerdo da fita, na horizontal
     if(l.tags.length>1){
-      const extra=el('div'); extra.style.cssText='position:absolute;top:3px;right:3px;display:flex;gap:2px;z-index:3;';
-      l.tags.slice(1,4).forEach(tag=>{
+      const dotsWrap=el('div');
+      dotsWrap.style.cssText='position:absolute;top:9px;right:54px;display:flex;gap:4px;align-items:center;z-index:3;';
+      l.tags.slice(1,4).forEach((tag,idx)=>{
         const ctt=customTags.find(x=>x.id===tag.id)||tag;
         const tcc=getTagColor(ctt.color||tag.color);
-        const dot=el('div'); dot.style.cssText=`width:7px;height:7px;border-radius:50%;background:${tcc.dot};border:1.5px solid var(--surface);`;
-        dot.title=ctt.name||tag.name;
-        extra.appendChild(dot);
+        const dot=el('div');
+        dot.style.cssText=`width:12px;height:12px;border-radius:50%;background:${tcc.dot};border:2px solid var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default;flex-shrink:0;`;
+        const ttId='tt-'+l.id+'-'+(idx+1);
+        dot.addEventListener('mouseenter',e=>showTagTooltip(e, ctt.name||tag.name, tcc.dot, ttId));
+        dot.addEventListener('mouseleave',()=>hideTagTooltip(ttId));
+        dotsWrap.appendChild(dot);
       });
-      card.appendChild(extra);
+      card.appendChild(dotsWrap);
     }
   }
   // Value / repasse on card
@@ -1224,6 +1236,22 @@ function renderActList(activitiesArr, container){
 
 function openLead(id){ const l=allLeads.find(x=>x.id===id); if(!l) return; buildLeadModal(l); document.getElementById('lead-overlay').style.display='flex'; }
 
+// ── Tag tooltip (hover) ──
+function showTagTooltip(e, name, color, id){
+  hideTagTooltip(id);
+  const tt=document.createElement('div');
+  tt.id=id;
+  tt.style.cssText=`position:fixed;background:${color};color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;white-space:nowrap;z-index:9999;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.2);`;
+  tt.textContent=name;
+  document.body.appendChild(tt);
+  const rect=e.target.getBoundingClientRect();
+  tt.style.top=(rect.bottom+5)+'px';
+  tt.style.left=Math.max(4,rect.left+rect.width/2-tt.offsetWidth/2)+'px';
+}
+function hideTagTooltip(id){
+  const old=document.getElementById(id); if(old) old.remove();
+}
+
 function buildLeadModal(l){
   const modal=document.getElementById('lead-modal'); modal.innerHTML='';
   const ed=canEdit(l);
@@ -1234,10 +1262,25 @@ function buildLeadModal(l){
   // header
   const hdr=el('div','modal-hdr');
   const av=el('div','modal-av',initials); av.style.background='#EFF6FF'; av.style.color='#2563EB';
-  const info=el('div');
+  const info=el('div'); info.style.flex='1';
   info.appendChild(el('div','modal-badge',colName));
   info.appendChild(el('div','modal-title',l.name));
   const sub=el('div','modal-sub'); sub.innerHTML=`${l.dealName?`<strong>${l.dealName}</strong> · `:''}${l.product||'—'} · <span style="color:#059669;font-weight:600;">${fmt(l.value)}</span>`; info.appendChild(sub);
+
+  // Tags como pills no header
+  if(l.tags&&l.tags.length){
+    const tagsRow=el('div'); tagsRow.style.cssText='display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;';
+    l.tags.forEach(tag=>{
+      const ctt=customTags.find(x=>x.id===tag.id)||tag;
+      const tcc=getTagColor(ctt.color||tag.color);
+      const pill=el('div'); pill.style.cssText=`display:inline-flex;align-items:center;gap:5px;background:${tcc.bg||tcc.dot+'22'};border:1px solid ${tcc.dot}40;border-radius:999px;padding:3px 10px;`;
+      const dot=el('span'); dot.style.cssText=`width:8px;height:8px;border-radius:50%;background:${tcc.dot};flex-shrink:0;`;
+      const nm=el('span'); nm.style.cssText=`font-size:11px;font-weight:600;color:${tcc.color||tcc.dot};`; nm.textContent=ctt.name||tag.name;
+      pill.appendChild(dot); pill.appendChild(nm); tagsRow.appendChild(pill);
+    });
+    info.appendChild(tagsRow);
+  }
+
   const cb=el('button','modal-close'); cb.innerHTML='<i class="ti ti-x"></i>'; cb.addEventListener('click',closeLead);
   hdr.appendChild(av); hdr.appendChild(info); hdr.appendChild(cb); modal.appendChild(hdr);
   if(!ed){ const ban=el('div','ro-banner'); ban.innerHTML='<i class="ti ti-eye"></i> Somente leitura.'; modal.appendChild(ban); }
