@@ -694,9 +694,7 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 
 <script>
 'use strict';
-const JSONBIN_KEY = '$2a$10$OX7tMVxdpb9XDGvwEEcw5e48.cIiEGph4wp5pEojGqv.BdLrj.ifC';
-const JSONBIN_URL = 'https://api.jsonbin.io/v3/b';
-const BIN_ID = '6a0bb6386610dd3ae8697787';
+const CF_WORKER = 'https://valorcrm-api.valor-corretora.workers.dev';
 
 const USERS = {
   admin:    { pass:'nexur2025', name:'Admin',    role:'admin', color:'#2563EB', bg:'#EFF6FF', init:'A' },
@@ -749,20 +747,16 @@ function hideLoading(){ document.getElementById('loading').style.display='none';
 // ── API ──
 async function apiLoad(){
   try{
-    const r=await fetch(`${JSONBIN_URL}/${BIN_ID}/latest`,{
-      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':false}
-    });
+    const r=await fetch(CF_WORKER,{method:'GET'});
     const d=await r.json();
     if(d.opData) window._opData=d.opData;
-    else if(d.record?.opData) window._opData=d.record.opData;
-    const rec=d.record||d;
-    return{ leads:rec.leads||[], columns:rec.columns||DEF_COLS, notifications:rec.notifications||[], closings:rec.closings||[], globalTasks:rec.globalTasks||[], customProds:rec.customProds||[], customTags:rec.customTags||[], opData:rec.opData||null };
+    return{ leads:d.leads||[], columns:d.columns||DEF_COLS, notifications:d.notifications||[], closings:d.closings||[], globalTasks:d.globalTasks||[], customProds:d.customProds||[], customTags:d.customTags||[], opData:d.opData||null };
   }catch(e){ showToast('Erro ao carregar.'); return{leads:[],columns:DEF_COLS,notifications:[],closings:[],globalTasks:[]}; }
 }
 async function apiSave(){
   try{
     const opData=window._opData||getOpData();
-    await fetch(`${JSONBIN_URL}/${BIN_ID}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},body:JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags,opData})});
+    await fetch(CF_WORKER,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags,opData})});
   }catch(e){ showToast('Erro ao salvar.'); }
 }
 
@@ -3567,24 +3561,11 @@ function showRenovacoesPreview(renovacoes, panel, importBtn){
 async function importarRenovacoes(renovacoes, btn, panel){
   btn.disabled=true; btn.textContent='Fazendo backup e importando...';
   try {
-    // 1. Busca dados FRESCOS do JSONBin (não usa memória)
-    const loadResp=await fetch(JSONBIN_URL+'/'+BIN_ID+'/latest',{
-      headers:{'X-Master-Key':JSONBIN_KEY,'Cache-Control':'no-cache'}
-    });
+    // 1. Busca dados frescos do Worker
+    const loadResp=await fetch(CF_WORKER,{method:'GET'});
     if(!loadResp.ok) throw new Error('Erro ao carregar dados: HTTP '+loadResp.status);
-    const loadJson=await loadResp.json();
-    const dadosAtuais=loadJson.record||{};
+    const dadosAtuais=await loadResp.json();
     const leadsExistentes=dadosAtuais.leads||[];
-
-    // 2. Backup automático no bin de backup
-    const BACKUP_BIN='6a0bb7536877513b279502b1';
-    try {
-      await fetch(JSONBIN_URL+'/'+BACKUP_BIN,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
-        body:JSON.stringify({...dadosAtuais, backup_date:dateStr()+' · '+nowStr()})
-      });
-    } catch(e){ console.warn('Backup falhou mas importação continua:', e); }
 
     // 3. Cria novos leads
     const today=dateStr(); const now=nowStr();
@@ -3614,11 +3595,11 @@ async function importarRenovacoes(renovacoes, btn, panel){
     // 4. ADICIONA ao que já existe (nunca substitui)
     const todosLeads=[...leadsExistentes, ...novosLeads];
 
-    // 5. Salva no JSONBin
+    // 5. Salva no Worker
     showLoading();
-    const saveResp=await fetch(JSONBIN_URL+'/'+BIN_ID,{
+    const saveResp=await fetch(CF_WORKER,{
       method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({...dadosAtuais, leads:todosLeads})
     });
     if(!saveResp.ok) throw new Error('Erro ao salvar: HTTP '+saveResp.status);
