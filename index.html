@@ -287,10 +287,10 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 .cedit-btn:hover{color:var(--text3);}
 
 /* CARDS */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.7rem;cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.7rem;cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.04);overflow:hidden;}
 /* Tag ribbon */
-.card-ribbon-wrap{position:absolute;top:0;right:0;width:56px;height:56px;overflow:hidden;pointer-events:all;z-index:2;border-top-right-radius:8px;}
-.card-ribbon{position:absolute;top:10px;right:-18px;width:70px;padding:4px 0;font-size:8px;font-weight:700;text-align:center;letter-spacing:.04em;transform:rotate(45deg);transform-origin:center;pointer-events:all;cursor:default;line-height:1.2;}
+.card-ribbon-wrap{position:absolute;top:0;right:0;width:32px;height:32px;overflow:hidden;pointer-events:all;z-index:2;border-top-right-radius:8px;}
+.card-ribbon{position:absolute;top:5px;right:-18px;width:56px;padding:2px 0;font-size:0;transform:rotate(45deg);transform-origin:center;cursor:default;line-height:1;}
 .card:hover{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.07);}
 .card.dragging{opacity:.35;}
 .col.drag-over .carea{background:var(--blue-light);border-radius:8px;}
@@ -977,8 +977,8 @@ function buildCard(l, accentColor){
     const ribbonWrap=el('div','card-ribbon-wrap');
     ribbonWrap.style.cssText='position:absolute;top:0;right:0;width:56px;height:56px;overflow:hidden;pointer-events:none;z-index:2;';
     const ribbon=el('div','card-ribbon');
-    ribbon.style.cssText=`position:absolute;top:10px;right:-18px;width:72px;padding:4px 0;font-size:8px;font-weight:700;text-align:center;letter-spacing:.04em;transform:rotate(45deg);transform-origin:center;line-height:1.2;background:${tc.dot};color:#fff;`;
-    ribbon.textContent=shortName;
+    ribbon.style.cssText=`position:absolute;top:5px;right:-18px;width:56px;padding:2px 0;font-size:0;transform:rotate(45deg);transform-origin:center;background:${tc.dot};`;
+    ribbon.textContent='';
     ribbonWrap.appendChild(ribbon);
     card.appendChild(ribbonWrap);
 
@@ -993,7 +993,7 @@ function buildCard(l, accentColor){
     // Bolinhas das tags adicionais — ao lado esquerdo da fita, na horizontal
     if(l.tags.length>1){
       const dotsWrap=el('div');
-      dotsWrap.style.cssText='position:absolute;top:9px;right:54px;display:flex;gap:4px;align-items:center;z-index:3;';
+      dotsWrap.style.cssText='position:absolute;top:8px;right:30px;display:flex;gap:3px;align-items:center;z-index:3;';
       l.tags.slice(1,4).forEach((tag,idx)=>{
         const ctt=customTags.find(x=>x.id===tag.id)||tag;
         const tcc=getTagColor(ctt.color||tag.color);
