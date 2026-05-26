@@ -403,7 +403,7 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 .ai-mention{background:#F5F3FF;color:#7C3AED;}
 .ai-link{background:#FFF7ED;color:#EA580C;}
 .act-when{font-size:10px;color:var(--text4);margin-bottom:1px;}
-.act-txt{font-size:12px;color:var(--text2);font-weight:500;}
+.act-txt{font-size:12px;color:var(--text2);font-weight:500;white-space:pre-wrap;word-break:break-word;}
 .act-by{font-size:10px;color:var(--text4);}
 .save-btn{width:100%;background:var(--blue);color:#fff;border:none;padding:10px;border-radius:8px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
 .save-btn:hover{background:#1D4ED8;}
@@ -2423,7 +2423,9 @@ function renderChecklistTemplates(body){
     nmBtn.textContent='Criar';
     nmBtn.addEventListener('click',()=>{
       const n=nmInp.value.trim(); if(!n) return;
-      op.checklistTemplates.push({id:'tpl-'+Date.now(),name:n,items:[]});
+      const freshOp=getOpData();
+      freshOp.checklistTemplates=freshOp.checklistTemplates||[];
+      freshOp.checklistTemplates.push({id:'tpl-'+Date.now(),name:n,items:[]});
       nmInp.value=''; saveOpData(); renderTpls();
     });
     nmInp.addEventListener('keydown',e=>{ if(e.key==='Enter') nmBtn.click(); });
@@ -2922,6 +2924,11 @@ function openImportChecklist(card, onImport){
       card.checklist=card.checklist||[];
       tpl.items.forEach(text=>{ if(!card.checklist.find(i=>i.text===text)) card.checklist.push({text,done:false}); });
       onImport();
+      // Scroll para o checklist
+      setTimeout(()=>{
+        const cl=document.querySelector('.op-checklist-bar,.op-checklist-item');
+        if(cl) cl.scrollIntoView({behavior:'smooth',block:'center'});
+      },100);
     });
     menu.appendChild(btn);
   });
