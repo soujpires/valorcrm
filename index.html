@@ -792,7 +792,8 @@ function startAutoRefresh(){
     const leadsAntigosSnap=allLeads.map(l=>({...l,tasks:(l.tasks||[]).map(t=>({...t}))}));
     const closingsAntigosSnap=[...closings];
     allLeads=d.leads; columns=d.columns; notifications=d.notifications; closings=d.closings; globalTasks=d.globalTasks||[]; customProds=d.customProds||[]; customTags=d.customTags||[];
-    if(d.opData) window._opData=d.opData;
+      if(d.opData && !window._opDataDirty) window._opData=d.opData;
+      window._opDataDirty=false;
     detectarMudancas(leadsAntigosSnap, allLeads, [], [], closingsAntigosSnap, closings);
     renderAll(); renderNotifDot(); updateTasksBadge();
     if(currentPage==='operacional') renderOpBoard();
@@ -2471,12 +2472,7 @@ function getOpData(){
 
 function saveOpData(){
   window._opDataDirty=true;
-  // Pausa o auto-refresh por 5s para evitar sobrescrever dados recém-salvos
-  if(autoRefreshTimer){ clearInterval(autoRefreshTimer); autoRefreshTimer=null; }
-  apiSave().then(()=>{
-    // Reinicia o auto-refresh após salvar
-    setTimeout(()=>{ if(currentUser) startAutoRefresh(); }, 3000);
-  });
+  apiSave();
 }
 
 function renderOpBoard(){
@@ -2849,8 +2845,9 @@ function openOpCard(cardId, defaultColId){
     card.activities.push({type:isMention?'mention':'msg',text:msg,by:currentUser,when:`${dateStr()} · ${nowStr()}`});
     if(isMention && currentUser!=='nalberty') notifications.push({id:'n'+Date.now(),text:`${USERS[currentUser].name} mencionou você na tarefa "${card.title}": ${msg}`,when:`${dateStr()} · ${nowStr()}`,for:'nalberty',read:false});
     fuTA.value=''; alist.innerHTML=''; renderActList(card.activities, alist);
-    // Salva imediatamente
+    // Atualiza card no op.cards e salva
     if(!card._isNew){ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
+    window._opDataDirty=true;
     showLoading(); await apiSave(); hideLoading();
     showToast(isMention?'@Nalberty notificado!':'Follow-up registrado!');
   }
@@ -2890,8 +2887,8 @@ function openOpCard(cardId, defaultColId){
     card.colId=colSel.value||card.colId;
     card.priority=priSel.value;
     card.due=dateInpToolbar.value;
-    if(card._isNew){ delete card._isNew; op.cards.push(card); }
-    else{ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
+    if(card._isNew){ delete card._isNew; getOpData().cards.push(card); }
+    else{ const freshOp=getOpData(); const idx=freshOp.cards.findIndex(c=>c.id===card.id); if(idx>=0) freshOp.cards[idx]=card; else freshOp.cards.push(card); }
     overlay.style.display='none'; saveOpData(); renderOpBoard();
   });
   foot.appendChild(cancelBtn); foot.appendChild(saveBtn); modal.appendChild(foot);
