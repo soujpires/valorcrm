@@ -2618,7 +2618,10 @@ function openOpCard(cardId, defaultColId){
   badge.style.background=(col?.color||'#6B7280')+'22'; badge.style.color=col?.color||'#6B7280';
   const titleInp=document.createElement('input');
   titleInp.value=card.title; titleInp.placeholder='Título da tarefa...';
-  titleInp.style.cssText='font-size:17px;font-weight:600;color:var(--text1);border:none;outline:none;width:100%;background:transparent;font-family:\'DM Sans\',sans-serif;margin-top:4px;';
+  titleInp.style.cssText='font-size:17px;font-weight:600;color:var(--text1);border:none;border-bottom:2px solid var(--border);outline:none;width:100%;background:transparent;font-family:\'DM Sans\',sans-serif;margin-top:4px;padding-bottom:4px;transition:border-color .15s;';
+  titleInp.addEventListener('focus',()=>titleInp.style.borderBottomColor='var(--blue)');
+  titleInp.addEventListener('blur',()=>titleInp.style.borderBottomColor='var(--border)');
+  titleInp.addEventListener('input',()=>{ card.title=titleInp.value; });
   info.appendChild(badge); info.appendChild(titleInp);
   const closeBtn=el('button','modal-close',''); closeBtn.innerHTML='<i class="ti ti-x"></i>';
   closeBtn.addEventListener('click',()=>overlay.style.display='none');
@@ -2638,10 +2641,10 @@ function openOpCard(cardId, defaultColId){
   ['','Alta','Média','Baixa'].forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p||'Prioridade'; if(p===card.priority) o.selected=true; priSel.appendChild(o); });
   priSel.addEventListener('change',()=>{ card.priority=priSel.value; });
 
-  // Data sempre visível na toolbar
+  // Data sempre visível na toolbar com label
+  const dateLbl=document.createElement('span'); dateLbl.style.cssText='font-size:11px;color:var(--text3);white-space:nowrap;'; dateLbl.textContent='Entrega:';
   const dateInpToolbar=document.createElement('input'); dateInpToolbar.type='date';
   dateInpToolbar.value=card.due||''; dateInpToolbar.style.cssText=selStyle;
-  dateInpToolbar.title='Data de entrega';
   dateInpToolbar.addEventListener('change',()=>{ card.due=dateInpToolbar.value; });
 
   // toggle helper for labels/date
@@ -2661,7 +2664,6 @@ function openOpCard(cardId, defaultColId){
   }
 
   const btnLab=mkToggleBtn('tag','Etiquetas','labels');
-  const btnDate=mkToggleBtn('calendar','Datas','date');
 
   // Importar Checklist
   const btnImport=document.createElement('button');
@@ -2669,7 +2671,8 @@ function openOpCard(cardId, defaultColId){
   btnImport.innerHTML='<i class="ti ti-clipboard-list" style="font-size:13px;"></i>Importar Checklist';
   btnImport.addEventListener('click',()=>openImportChecklist(card, renderChecklistSection));
 
-  toolbar.appendChild(colSel); toolbar.appendChild(priSel); toolbar.appendChild(dateInpToolbar);
+  toolbar.appendChild(colSel); toolbar.appendChild(priSel);
+  toolbar.appendChild(dateLbl); toolbar.appendChild(dateInpToolbar);
   toolbar.appendChild(btnLab); toolbar.appendChild(btnImport);
 
   if(!card._isNew){
@@ -2867,13 +2870,18 @@ function openOpCard(cardId, defaultColId){
   saveBtn.style.cssText='padding:7px 18px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
   saveBtn.textContent='Salvar';
   saveBtn.addEventListener('click',()=>{
-    if(!titleInp.value.trim()){ titleInp.focus(); return; }
+    const title=titleInp.value.trim();
+    if(!title){
+      titleInp.style.borderBottomColor='#DC2626';
+      titleInp.focus();
+      titleInp.placeholder='⚠ Digite o título da tarefa';
+      return;
+    }
     // Confirma qualquer item em edição que tenha texto
     card.checklist.forEach(it=>{ if(it._editing && it.text) delete it._editing; });
     card.checklist=card.checklist.filter(it=>it.text && !it._editing);
-    card.title=titleInp.value.trim();
+    card.title=title;
     card.desc=descTA.value;
-    // Lê sempre dos selects — garante que colSel/priSel foram capturados
     card.colId=colSel.value||card.colId;
     card.priority=priSel.value;
     card.due=dateInpToolbar.value;
