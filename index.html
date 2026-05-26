@@ -916,16 +916,104 @@ function renderMetrics(){
     <div class="mc"><div class="mlbl">Conversão</div><div class="mval">${conv}%</div><div class="msub">${ganhos} de ${total} convertidos</div></div>`;
 }
 
+// Estado dos filtros por coluna
+const colFilters={};
+
+function getColLeads(col, leads){
+  let cl=leads.filter(l=>l.col===col.id);
+  const f=colFilters[col.id]||{};
+  // Filtro por etiqueta
+  if(f.tags&&f.tags.length>0){
+    cl=cl.filter(l=>(l.tags||[]).some(t=>f.tags.includes(t.id||t.name)));
+  }
+  // Ordenação
+  if(f.sort==='vigencia'){
+    cl=[...cl].sort((a,b)=>{
+      const va=a.obs?.match(/Vencimento:\s*([\d\/]+)/)?.[1]||'99/99/9999';
+      const vb=b.obs?.match(/Vencimento:\s*([\d\/]+)/)?.[1]||'99/99/9999';
+      const toDate=s=>{ const [d,m,y]=s.split('/'); return new Date(`${y}-${m}-${d}`); };
+      return toDate(va)-toDate(vb);
+    });
+  } else if(f.sort==='maior'){
+    cl=[...cl].sort((a,b)=>(b.value||0)-(a.value||0));
+  } else if(f.sort==='menor'){
+    cl=[...cl].sort((a,b)=>(a.value||0)-(b.value||0));
+  }
+  return cl;
+}
+
+function openColFilter(col, btn){
+  document.querySelectorAll('.col-filter-dd').forEach(d=>d.remove());
+  const dd=document.createElement('div'); dd.className='col-filter-dd';
+  dd.style.cssText='position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px var(--shadow);z-index:400;min-width:200px;padding:8px 0;';
+  const rect=btn.getBoundingClientRect();
+  dd.style.top=(rect.bottom+4)+'px'; dd.style.left=rect.left+'px';
+
+  const f=colFilters[col.id]||{};
+  const mkSection=(title)=>{ const d=document.createElement('div'); d.style.cssText='padding:4px 12px 2px;font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.05em;'; d.textContent=title; dd.appendChild(d); };
+  const mkCheck=(label,key,val,isTag=false)=>{
+    const row=document.createElement('label'); row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:12px;color:var(--text2);';
+    row.addEventListener('mouseenter',()=>row.style.background='var(--bg2)');
+    row.addEventListener('mouseleave',()=>row.style.background='transparent');
+    const cb=document.createElement('input'); cb.type='checkbox';
+    if(isTag){ cb.checked=(f.tags||[]).includes(val); }
+    else { cb.checked=f.sort===val; cb.type='radio'; cb.name='col-sort-'+col.id; }
+    cb.style.cssText='width:14px;height:14px;accent-color:var(--blue);cursor:pointer;';
+    cb.addEventListener('change',()=>{
+      if(!colFilters[col.id]) colFilters[col.id]={};
+      if(isTag){
+        colFilters[col.id].tags=colFilters[col.id].tags||[];
+        if(cb.checked) colFilters[col.id].tags.push(val);
+        else colFilters[col.id].tags=colFilters[col.id].tags.filter(x=>x!==val);
+      } else {
+        colFilters[col.id].sort=cb.checked?val:'';
+      }
+      renderBoard();
+    });
+    const span=document.createElement('span'); span.textContent=label;
+    row.appendChild(cb); row.appendChild(span); dd.appendChild(row);
+  };
+
+  mkSection('Ordenar por');
+  mkCheck('Mais recentes','sort','recente');
+  mkCheck('Vigência','sort','vigencia');
+  mkCheck('Valor (maior)','sort','maior');
+  mkCheck('Valor (menor)','sort','menor');
+
+  if(customTags.length>0){
+    mkSection('Filtrar por etiqueta');
+    customTags.forEach(ct=>mkCheck(ct.name,'tag',ct.id||ct.name,true));
+  }
+
+  // Limpar filtros
+  const clearBtn=document.createElement('button');
+  clearBtn.style.cssText='width:calc(100% - 24px);margin:6px 12px 2px;padding:5px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text3);font-size:11px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+  clearBtn.textContent='Limpar filtros';
+  clearBtn.addEventListener('click',()=>{ delete colFilters[col.id]; dd.remove(); renderBoard(); });
+  dd.appendChild(clearBtn);
+
+  document.body.appendChild(dd);
+  setTimeout(()=>document.addEventListener('click',e=>{ if(!dd.contains(e.target)&&e.target!==btn) dd.remove(); },{once:true}),10);
+}
+
 function renderBoard(){
   const leads=visibleLeads(); const board=document.getElementById('board'); board.innerHTML='';
   columns.forEach(col=>{
-    const cl=leads.filter(l=>l.col===col.id);
+    const cl=getColLeads(col, leads);
+    const allCl=leads.filter(l=>l.col===col.id);
     const colVal=cl.reduce((s,l)=>s+(Number(l.value)||0),0), colComm=cl.reduce((s,l)=>s+calcComm(l.value,l.commPct),0);
     const colEl=el('div','col'); colEl.dataset.colId=col.id;
     const acc=el('div','cacc'); acc.style.background=col.color; colEl.appendChild(acc);
     const hdr=el('div','chdr'); const tr=el('div','ctr');
     const icon=col.terminal==='won'?'<i class="ti ti-trophy" style="color:#059669;font-size:12px;"></i> ':col.terminal==='lost'?'<i class="ti ti-x" style="color:#DC2626;font-size:12px;"></i> ':'';
-    const nm=el('span','cnm',icon+col.name); const acts=el('div','cact'); const cnt=el('span','cct',String(cl.length)); acts.appendChild(cnt);
+    const nm=el('span','cnm',icon+col.name); const acts=el('div','cact'); const cnt=el('span','cct',String(allCl.length)); acts.appendChild(cnt);
+    // Botão de filtro
+    const hasFilter=colFilters[col.id]&&(colFilters[col.id].sort||(colFilters[col.id].tags&&colFilters[col.id].tags.length>0));
+    const filterBtn=el('button','cedit-btn');
+    filterBtn.innerHTML=`<i class="ti ti-adjustments-horizontal" style="font-size:13px;color:${hasFilter?'var(--blue)':'inherit'};"></i>`;
+    filterBtn.title='Filtrar/Ordenar'; filterBtn.style.color=hasFilter?'var(--blue)':'';
+    filterBtn.addEventListener('click',e=>{ e.stopPropagation(); openColFilter(col, filterBtn); });
+    acts.appendChild(filterBtn);
     if(!col.fixed){
       const eb=el('button','cedit-btn'); eb.innerHTML='<i class="ti ti-pencil"></i>'; eb.addEventListener('click',()=>openEditCol(col.id));
       const db=el('button','cedit-btn'); db.innerHTML='<i class="ti ti-trash"></i>'; db.addEventListener('click',()=>deleteCol(col.id));
@@ -961,6 +1049,15 @@ function buildCard(l, accentColor){
   card.appendChild(el('div','card-name',l.name));
   if(l.dealName){ card.appendChild(el('div','card-deal',l.dealName)); }
   card.appendChild(el('div','card-prod',(l.insuranceType?`${l.product||'—'} · ${l.insuranceType}`:l.product||'—')));
+  // Vigência — só em renovações
+  if(l.insuranceType&&l.insuranceType.toLowerCase().includes('renov')&&l.obs){
+    const vigMatch=l.obs.match(/Vencimento:\s*([\d\/]+)/);
+    if(vigMatch){
+      const vigEl=el('div'); vigEl.style.cssText='font-size:11px;color:var(--text4);margin-left:10px;margin-bottom:3px;display:flex;align-items:center;gap:3px;';
+      vigEl.innerHTML=`<i class="ti ti-calendar" style="font-size:10px;"></i> Vig: ${vigMatch[1]}`;
+      card.appendChild(vigEl);
+    }
+  }
   if(upcoming){ const dt=el('div','task-due-tag'); dt.innerHTML=`<i class="ti ti-clock" style="font-size:10px;"></i> ${fmtDue(upcoming.due)}`; card.appendChild(dt); }
   // Tags — fita dobrada no canto superior direito + bolinhas ao lado esquerdo
   if(l.tags&&l.tags.length){
@@ -971,7 +1068,7 @@ function buildCard(l, accentColor){
 
     // Wrapper da fita (overflow hidden para não vazar)
     const ribbonWrap=el('div','card-ribbon-wrap');
-    ribbonWrap.style.cssText='position:absolute;top:0;right:0;width:56px;height:56px;overflow:hidden;pointer-events:none;z-index:2;';
+    ribbonWrap.style.cssText='position:absolute;top:0;right:0;width:32px;height:32px;overflow:hidden;pointer-events:none;z-index:2;';
     const ribbon=el('div','card-ribbon');
     ribbon.style.cssText=`position:absolute;top:5px;right:-18px;width:56px;padding:2px 0;font-size:0;transform:rotate(45deg);transform-origin:center;background:${tc.dot};`;
     ribbon.textContent='';
@@ -989,7 +1086,7 @@ function buildCard(l, accentColor){
     // Bolinhas das tags adicionais — ao lado esquerdo da fita, na horizontal
     if(l.tags.length>1){
       const dotsWrap=el('div');
-      dotsWrap.style.cssText='position:absolute;top:8px;right:30px;display:flex;gap:3px;align-items:center;z-index:3;';
+      dotsWrap.style.cssText='position:absolute;top:6px;right:26px;display:flex;gap:3px;align-items:center;z-index:3;';
       l.tags.slice(1,4).forEach((tag,idx)=>{
         const ctt=customTags.find(x=>x.id===tag.id)||tag;
         const tcc=getTagColor(ctt.color||tag.color);
