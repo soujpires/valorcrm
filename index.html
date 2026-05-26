@@ -2411,7 +2411,10 @@ function _renderChecklistTpls(){
     addBtn.textContent='+ Item';
     addBtn.addEventListener('click',()=>{
       const v=addInp.value.trim(); if(!v) return;
-      tpl.items.push(v); addInp.value='';
+      // Busca o template pelo ID para garantir referência fresca
+      const freshTpl=getOpData().checklistTemplates.find(t=>t.id===tpl.id);
+      if(freshTpl){ freshTpl.items.push(v); } else { tpl.items.push(v); }
+      addInp.value='';
       saveOpData(); _renderChecklistTpls();
     });
     addInp.addEventListener('keydown',e=>{ if(e.key==='Enter') addBtn.click(); });
