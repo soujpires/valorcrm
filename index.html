@@ -2638,6 +2638,12 @@ function openOpCard(cardId, defaultColId){
   ['','Alta','Média','Baixa'].forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p||'Prioridade'; if(p===card.priority) o.selected=true; priSel.appendChild(o); });
   priSel.addEventListener('change',()=>{ card.priority=priSel.value; });
 
+  // Data sempre visível na toolbar
+  const dateInpToolbar=document.createElement('input'); dateInpToolbar.type='date';
+  dateInpToolbar.value=card.due||''; dateInpToolbar.style.cssText=selStyle;
+  dateInpToolbar.title='Data de entrega';
+  dateInpToolbar.addEventListener('change',()=>{ card.due=dateInpToolbar.value; });
+
   // toggle helper for labels/date
   const togglePanels={labels:false,date:false};
   function mkToggleBtn(icon,label,key){
@@ -2663,8 +2669,8 @@ function openOpCard(cardId, defaultColId){
   btnImport.innerHTML='<i class="ti ti-clipboard-list" style="font-size:13px;"></i>Importar Checklist';
   btnImport.addEventListener('click',()=>openImportChecklist(card, renderChecklistSection));
 
-  toolbar.appendChild(colSel); toolbar.appendChild(priSel);
-  toolbar.appendChild(btnLab); toolbar.appendChild(btnDate); toolbar.appendChild(btnImport);
+  toolbar.appendChild(colSel); toolbar.appendChild(priSel); toolbar.appendChild(dateInpToolbar);
+  toolbar.appendChild(btnLab); toolbar.appendChild(btnImport);
 
   if(!card._isNew){
     const sep=document.createElement('div'); sep.style.cssText='flex:1;';
@@ -2867,7 +2873,10 @@ function openOpCard(cardId, defaultColId){
     card.checklist=card.checklist.filter(it=>it.text && !it._editing);
     card.title=titleInp.value.trim();
     card.desc=descTA.value;
-    // colId, priority, due já atualizados live via listeners
+    // Lê sempre dos selects — garante que colSel/priSel foram capturados
+    card.colId=colSel.value||card.colId;
+    card.priority=priSel.value;
+    card.due=dateInpToolbar.value;
     if(card._isNew){ delete card._isNew; op.cards.push(card); }
     else{ const idx=op.cards.findIndex(c=>c.id===card.id); if(idx>=0) op.cards[idx]=card; }
     overlay.style.display='none'; saveOpData(); renderOpBoard();
