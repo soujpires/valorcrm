@@ -2386,11 +2386,30 @@ function _renderChecklistTpls(){
     card.style.cssText='border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--surface);';
     const hdrRow=document.createElement('div'); hdrRow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
     const nm=el('div','',tpl.name); nm.style.cssText='font-size:13px;font-weight:600;color:var(--text1);flex:1;';
+    // Lápis editar nome
+    const editTpl=document.createElement('button');
+    editTpl.style.cssText='border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:13px;';
+    editTpl.innerHTML='<i class="ti ti-pencil"></i>';
+    editTpl.title='Editar nome';
+    editTpl.addEventListener('click',()=>{
+      // Substitui o texto por input inline
+      const inp=document.createElement('input'); inp.value=tpl.name;
+      inp.style.cssText='flex:1;border:1px solid var(--blue);border-radius:6px;padding:4px 8px;font-size:13px;font-weight:600;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;width:100%;';
+      nm.replaceWith(inp); inp.focus(); inp.select();
+      const confirm=()=>{
+        const v=inp.value.trim(); if(!v) return;
+        const freshTpl=getOpData().checklistTemplates.find(t=>t.id===tpl.id);
+        if(freshTpl) freshTpl.name=v;
+        saveOpData(); _renderChecklistTpls();
+      };
+      inp.addEventListener('blur',confirm);
+      inp.addEventListener('keydown',e=>{ if(e.key==='Enter') confirm(); if(e.key==='Escape') _renderChecklistTpls(); });
+    });
     const delTpl=document.createElement('button');
     delTpl.style.cssText='border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:13px;';
     delTpl.innerHTML='<i class="ti ti-trash"></i>';
     delTpl.addEventListener('click',()=>{ getOpData().checklistTemplates.splice(ti,1); saveOpData(); _renderChecklistTpls(); });
-    hdrRow.appendChild(nm); hdrRow.appendChild(delTpl); card.appendChild(hdrRow);
+    hdrRow.appendChild(nm); hdrRow.appendChild(editTpl); hdrRow.appendChild(delTpl); card.appendChild(hdrRow);
 
     tpl.items.forEach((item,ii)=>{
       const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12px;color:var(--text2);';
@@ -2755,36 +2774,68 @@ function openOpCard(cardId, defaultColId){
 
   function renderChecklistSection(){
     clSection.innerHTML='';
-    if(card.checklist.length===0){
+    const hasGroups=card.checklists&&card.checklists.length>0;
+    const hasManual=card.checklist&&card.checklist.filter(i=>i.text||i._editing).length>0;
+
+    if(!hasGroups && !hasManual){
       const addOnlyRow=document.createElement('div'); addOnlyRow.style.cssText='display:flex;align-items:center;gap:6px;';
       const addOnlyBtn=document.createElement('button');
       addOnlyBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
       addOnlyBtn.innerHTML='<i class="ti ti-plus" style="font-size:13px;"></i> Adicionar checklist';
-      // FIX: abre direto em modo edição com _editing:true
-      addOnlyBtn.addEventListener('click',()=>{ card.checklist.push({text:'',done:false,_editing:true}); renderChecklistSection(); });
+      addOnlyBtn.addEventListener('click',()=>{ card.checklist=card.checklist||[]; card.checklist.push({text:'',done:false,_editing:true}); renderChecklistSection(); });
       addOnlyRow.appendChild(addOnlyBtn); clSection.appendChild(addOnlyRow);
       return;
     }
 
-    // Header com barra de progresso (filtra itens com texto)
-    const validItems=card.checklist.filter(i=>i.text||i._editing);
-    const doneItems=validItems.filter(i=>i.done&&i.text).length;
-    const totalItems=validItems.filter(i=>i.text).length;
-    const pct=totalItems>0?Math.round(doneItems/totalItems*100):0;
-    const clHdr=document.createElement('div'); clHdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:6px;';
-    const clTitle=el('div','sec-lbl','<i class="ti ti-checkbox" style="font-size:13px;"></i> Checklist'); clTitle.style.margin='0';
-    const clPct=document.createElement('div'); clPct.style.cssText='font-size:11px;color:var(--text4);font-weight:600;';
-    clPct.textContent=totalItems>0?`${doneItems}/${totalItems}`:'';
-    clHdr.appendChild(clTitle); clHdr.appendChild(clPct); clSection.appendChild(clHdr);
+    // ── Grupos importados ──
+    if(hasGroups){
+      card.checklists.forEach((grp,gi)=>{
+        const grpDone=grp.items.filter(i=>i.done).length;
+        const grpTotal=grp.items.length;
+        const grpPct=grpTotal>0?Math.round(grpDone/grpTotal*100):0;
 
-    if(totalItems>0){
-      const bar=document.createElement('div'); bar.style.cssText='height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:10px;';
-      const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${pct}%;transition:width .25s;`;
-      bar.appendChild(fill); clSection.appendChild(bar);
+        const grpHdr=document.createElement('div'); grpHdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;margin-top:8px;';
+        const grpTitle=el('div','sec-lbl',`<i class="ti ti-checkbox" style="font-size:12px;"></i> ${grp.name}`); grpTitle.style.margin='0;flex:1;';
+        const grpPctEl=el('div'); grpPctEl.style.cssText='font-size:11px;color:var(--text4);font-weight:600;'; grpPctEl.textContent=`${grpDone}/${grpTotal}`;
+        const delGrp=el('button'); delGrp.style.cssText='border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:12px;'; delGrp.innerHTML='<i class="ti ti-x"></i>';
+        delGrp.addEventListener('click',()=>{ card.checklists.splice(gi,1); renderChecklistSection(); });
+        grpHdr.appendChild(grpTitle); grpHdr.appendChild(grpPctEl); grpHdr.appendChild(delGrp); clSection.appendChild(grpHdr);
+
+        if(grpTotal>0){
+          const bar=document.createElement('div'); bar.style.cssText='height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px;';
+          const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${grpPct}%;`;
+          bar.appendChild(fill); clSection.appendChild(bar);
+        }
+
+        grp.items.forEach((item,ii)=>{
+          const row=document.createElement('div'); row.className='op-checklist-item';
+          const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
+          cb.addEventListener('change',()=>{ card.checklists[gi].items[ii].done=cb.checked; renderChecklistSection(); });
+          const txt=document.createElement('span'); txt.className='op-check-txt'+(item.done?' done':''); txt.textContent=item.text;
+          const del=document.createElement('button'); del.className='op-check-del'; del.innerHTML='<i class="ti ti-x"></i>';
+          del.addEventListener('click',()=>{ card.checklists[gi].items.splice(ii,1); renderChecklistSection(); });
+          row.appendChild(cb); row.appendChild(txt); row.appendChild(del); clSection.appendChild(row);
+        });
+      });
     }
 
-    // Items
-    card.checklist.forEach((item,i)=>{
+    // ── Itens manuais ──
+    const validItems=(card.checklist||[]).filter(i=>i.text||i._editing);
+    if(validItems.length>0){
+      const manHdr=document.createElement('div'); manHdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;margin-top:8px;';
+      const manTitle=el('div','sec-lbl','<i class="ti ti-list" style="font-size:12px;"></i> Itens manuais'); manTitle.style.margin='0';
+      const manDone=validItems.filter(i=>i.done&&i.text).length;
+      const manTotal=validItems.filter(i=>i.text).length;
+      const manPct=el('div'); manPct.style.cssText='font-size:11px;color:var(--text4);font-weight:600;'; manPct.textContent=`${manDone}/${manTotal}`;
+      manHdr.appendChild(manTitle); manHdr.appendChild(manPct); clSection.appendChild(manHdr);
+      if(manTotal>0){
+        const bar=document.createElement('div'); bar.style.cssText='height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px;';
+        const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${Math.round(manDone/manTotal*100)}%;`;
+        bar.appendChild(fill); clSection.appendChild(bar);
+      }
+    }
+
+    (card.checklist||[]).forEach((item,i)=>{
       if(item._editing){
         const row=document.createElement('div'); row.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
         const editInp=document.createElement('input'); editInp.value=item.text;
@@ -2808,7 +2859,7 @@ function openOpCard(cardId, defaultColId){
         setTimeout(()=>editInp.focus(),0);
         return;
       }
-      if(!item.text) return; // pula itens sem texto
+      if(!item.text) return;
       const row=document.createElement('div'); row.className='op-checklist-item';
       const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
       cb.addEventListener('change',()=>{ card.checklist[i].done=cb.checked; renderChecklistSection(); });
@@ -2820,12 +2871,12 @@ function openOpCard(cardId, defaultColId){
       row.appendChild(cb); row.appendChild(txt); row.appendChild(del); clSection.appendChild(row);
     });
 
-    // Botão + para adicionar mais itens
+    // Botão + adicionar item manual
     const addBtn=document.createElement('button');
     addBtn.style.cssText='display:flex;align-items:center;gap:5px;margin-top:6px;padding:4px 8px;border:none;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
     addBtn.innerHTML='<i class="ti ti-plus" style="font-size:12px;"></i> Adicionar item';
     addBtn.addEventListener('click',()=>{
-      // Confirma qualquer edição pendente antes de adicionar novo
+      card.checklist=card.checklist||[];
       card.checklist.forEach(it=>{ if(it._editing && it.text) delete it._editing; else if(it._editing && !it.text) it._skip=true; });
       card.checklist=card.checklist.filter(it=>!it._skip);
       card.checklist.push({text:'',done:false,_editing:true});
@@ -2895,6 +2946,8 @@ function openOpCard(cardId, defaultColId){
     // Confirma qualquer item em edição que tenha texto
     card.checklist.forEach(it=>{ if(it._editing && it.text) delete it._editing; });
     card.checklist=card.checklist.filter(it=>it.text && !it._editing);
+    // Limpa _editing dos grupos também
+    if(card.checklists) card.checklists.forEach(g=>g.items.forEach(it=>delete it._editing));
     card.title=title;
     card.desc=descTA.value;
     card.colId=colSel.value||card.colId;
@@ -2932,14 +2985,17 @@ function openImportChecklist(card, onImport){
     btn.addEventListener('mouseleave',()=>btn.style.background='transparent');
     btn.addEventListener('click',()=>{
       menu.remove();
-      card.checklist=card.checklist||[];
-      tpl.items.forEach(text=>{ if(!card.checklist.find(i=>i.text===text)) card.checklist.push({text,done:false}); });
+      // Suporte a múltiplos checklists: cada importação cria um grupo separado
+      card.checklists=card.checklists||[];
+      // Evita importar o mesmo template duas vezes
+      const jaImportado=card.checklists.find(g=>g.tplId===tpl.id);
+      if(jaImportado){
+        // Adiciona itens que ainda não existem
+        tpl.items.forEach(text=>{ if(!jaImportado.items.find(i=>i.text===text)) jaImportado.items.push({text,done:false}); });
+      } else {
+        card.checklists.push({tplId:tpl.id, name:tpl.name, items:tpl.items.map(text=>({text,done:false}))});
+      }
       onImport();
-      // Scroll para o checklist
-      setTimeout(()=>{
-        const cl=document.querySelector('.op-checklist-bar,.op-checklist-item');
-        if(cl) cl.scrollIntoView({behavior:'smooth',block:'center'});
-      },100);
     });
     menu.appendChild(btn);
   });
