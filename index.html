@@ -777,24 +777,26 @@ function doLogin(){
   if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; document.getElementById('sb-ferramentas').style.display='flex'; document.getElementById('sb-operacional').style.display='flex'; document.getElementById('sb-whatsapp').style.display='flex'; document.getElementById('view-select').value=viewFilter; }
   if(autoRefreshTimer) clearInterval(autoRefreshTimer);
   loadAndRender().then(()=>{
-    // Verifica tarefas vencendo hoje ao logar
     setTimeout(()=>verificarTarefasVencendo(allLeads), 2000);
-    autoRefreshTimer=setInterval(async()=>{
-      const d=await apiLoad();
-      // Só re-renderiza se os dados mudaram
-      const newHash=JSON.stringify({leads:d.leads,columns:d.columns,notifications:d.notifications,closings:d.closings,globalTasks:d.globalTasks||[],customProds:d.customProds||[],customTags:d.customTags||[]});
-      const oldHash=JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags});
-      if(newHash===oldHash) return;
-      const leadsAntigosSnap=allLeads.map(l=>({...l,tasks:(l.tasks||[]).map(t=>({...t}))}));
-      const closingsAntigosSnap=[...closings];
-      allLeads=d.leads; columns=d.columns; notifications=d.notifications; closings=d.closings; globalTasks=d.globalTasks||[]; customProds=d.customProds||[]; customTags=d.customTags||[];
-      // Atualiza opData só se veio do servidor e for diferente do atual
-      if(d.opData) window._opData=d.opData;
-      detectarMudancas(leadsAntigosSnap, allLeads, [], [], closingsAntigosSnap, closings);
-      renderAll(); renderNotifDot(); updateTasksBadge();
-      if(currentPage==='operacional') renderOpBoard();
-    },3000);
+    startAutoRefresh();
   });
+}
+
+function startAutoRefresh(){
+  if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer=setInterval(async()=>{
+    const d=await apiLoad();
+    const newHash=JSON.stringify({leads:d.leads,columns:d.columns,notifications:d.notifications,closings:d.closings,globalTasks:d.globalTasks||[],customProds:d.customProds||[],customTags:d.customTags||[]});
+    const oldHash=JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags});
+    if(newHash===oldHash) return;
+    const leadsAntigosSnap=allLeads.map(l=>({...l,tasks:(l.tasks||[]).map(t=>({...t}))}));
+    const closingsAntigosSnap=[...closings];
+    allLeads=d.leads; columns=d.columns; notifications=d.notifications; closings=d.closings; globalTasks=d.globalTasks||[]; customProds=d.customProds||[]; customTags=d.customTags||[];
+    if(d.opData) window._opData=d.opData;
+    detectarMudancas(leadsAntigosSnap, allLeads, [], [], closingsAntigosSnap, closings);
+    renderAll(); renderNotifDot(); updateTasksBadge();
+    if(currentPage==='operacional') renderOpBoard();
+  },3000);
 }
 document.getElementById('logout-btn').addEventListener('click',()=>{
   if(autoRefreshTimer){clearInterval(autoRefreshTimer);autoRefreshTimer=null;}
@@ -2468,10 +2470,13 @@ function getOpData(){
 }
 
 function saveOpData(){
-  // Persiste no JSONBin junto com o restante dos dados
-  // Injeta no objeto global para ser salvo no próximo apiSave
   window._opDataDirty=true;
-  apiSave();
+  // Pausa o auto-refresh por 5s para evitar sobrescrever dados recém-salvos
+  if(autoRefreshTimer){ clearInterval(autoRefreshTimer); autoRefreshTimer=null; }
+  apiSave().then(()=>{
+    // Reinicia o auto-refresh após salvar
+    setTimeout(()=>{ if(currentUser) startAutoRefresh(); }, 3000);
+  });
 }
 
 function renderOpBoard(){
