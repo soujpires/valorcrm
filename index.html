@@ -488,7 +488,7 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 </div>
     <div class="login-title">Bem-vindo</div>
     <div class="login-sub">Entre com suas credenciais</div>
-    <div class="fw"><label class="lbl" for="l-user">Usuário</label><input class="inp" type="text" id="l-user" autocomplete="username"></div>
+    <div class="fw"><label class="lbl" for="l-user">E-mail</label><input class="inp" type="email" id="l-user" autocomplete="email" placeholder="seu@email.com"></div>
     <div class="fw"><label class="lbl" for="l-pass">Senha</label><input class="inp" type="password" id="l-pass" autocomplete="current-password"></div>
     <button class="login-btn" id="login-btn">Entrar</button>
     <div class="login-err" id="login-err"></div>
@@ -710,10 +710,15 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 'use strict';
 const CF_WORKER = 'https://valorcrm-api.valor-corretora.workers.dev';
 
-const USERS = {
-  admin:    { pass:'nexur2025', name:'Admin',    role:'admin', color:'#2563EB', bg:'#EFF6FF', init:'A' },
-  nalberty: { pass:'nal2025',   name:'Nalberty', role:'user',  color:'#059669', bg:'#ECFDF5', init:'N' }
+// Usuários dinâmicos — carregados do Worker. USERS é preenchido após apiLoad.
+// Usuários padrão (fallback se Worker não tiver ainda)
+const DEFAULT_USERS = {
+  admin:    { email:'admin@somosvalor.com', pass:'nexur2025', name:'Admin',    username:'admin',    role:'admin', color:'#2563EB', bg:'#EFF6FF', init:'A',
+    perms:{pipeline:true,operacional:true,sinistros:true,whatsapp:true,faturamento:true,ferramentas:true,config:true} },
+  nalberty: { email:'nalberty@somosvalor.com', pass:'nal2025', name:'Nalberty', username:'nalberty', role:'user', color:'#059669', bg:'#ECFDF5', init:'N',
+    perms:{pipeline:true,operacional:false,sinistros:false,whatsapp:false,faturamento:true,ferramentas:false,config:false} },
 };
+let USERS = {...DEFAULT_USERS};
 const DEF_COLS = [
   { id:'lead',            name:'Lead',           color:'#F59E0B', fixed:true },
   { id:'contato',         name:'Contato',        color:'#2563EB', fixed:true },
@@ -765,6 +770,7 @@ async function apiLoad(){
     const d=await r.json();
     if(d.opData) window._opData=d.opData;
     if(d.snData) window._snData=d.snData;
+    if(d.users && Object.keys(d.users).length>0) USERS=d.users;
     return{ leads:d.leads||[], columns:d.columns||DEF_COLS, notifications:d.notifications||[], closings:d.closings||[], globalTasks:d.globalTasks||[], customProds:d.customProds||[], customTags:d.customTags||[], opData:d.opData||null, snData:d.snData||null };
   }catch(e){ showToast('Erro ao carregar.'); return{leads:[],columns:DEF_COLS,notifications:[],closings:[],globalTasks:[]}; }
 }
@@ -772,30 +778,74 @@ async function apiSave(){
   try{
     const opData=window._opData||getOpData();
     const snData=window._snData||getSnData();
-    await fetch(CF_WORKER,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags,opData,snData})});
+    await fetch(CF_WORKER,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({leads:allLeads,columns,notifications,closings,globalTasks,customProds,customTags,opData,snData,users:USERS})});
   }catch(e){ showToast('Erro ao salvar.'); }
 }
 
 // ── AUTH ──
+let loginAttempts=0, loginBlockedUntil=0;
 document.getElementById('login-btn').addEventListener('click', doLogin);
 document.getElementById('l-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
-function doLogin(){
-  const u=document.getElementById('l-user').value.trim().toLowerCase();
+
+async function doLogin(){
+  // Bloqueia se muitas tentativas
+  if(Date.now()<loginBlockedUntil){
+    const mins=Math.ceil((loginBlockedUntil-Date.now())/60000);
+    document.getElementById('login-err').textContent=`Muitas tentativas. Aguarde ${mins} min.`; return;
+  }
+  const emailInp=document.getElementById('l-user').value.trim().toLowerCase();
   const p=document.getElementById('l-pass').value;
-  const user=USERS[u];
-  if(!user||user.pass!==p){ document.getElementById('login-err').textContent='Usuário ou senha incorretos.'; return; }
-  currentUser=u; currentRole=user.role; viewFilter=currentRole==='admin'?'all':'mine';
+
+  // Carrega usuários do Worker antes de validar (garante dados frescos)
+  try{
+    const r=await fetch(CF_WORKER,{method:'GET'});
+    const d=await r.json();
+    if(d.users && Object.keys(d.users).length>0) USERS=d.users;
+  }catch(e){}
+
+  // Busca por e-mail
+  const userKey=Object.keys(USERS).find(k=>USERS[k].email===emailInp);
+  const user=userKey?USERS[userKey]:null;
+
+  if(!user||user.pass!==p){
+    loginAttempts++;
+    if(loginAttempts>=5){ loginBlockedUntil=Date.now()+15*60*1000; loginAttempts=0; }
+    document.getElementById('login-err').textContent='E-mail ou senha incorretos.'; return;
+  }
+
+  loginAttempts=0;
+  currentUser=userKey; currentRole=user.role;
+  viewFilter=currentRole==='admin'?'all':'mine';
   document.getElementById('login-err').textContent='';
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').style.display='flex';
-  const av=document.getElementById('hdr-av'); av.textContent=user.init; av.style.background=user.bg; av.style.color=user.color;
+
+  const av=document.getElementById('hdr-av'); av.textContent=user.init; av.style.background=user.bg||user.color+'22'; av.style.color=user.color;
   document.getElementById('hdr-name').textContent=user.name;
-  if(currentRole==='admin'){ document.getElementById('hdr-admin').style.display='inline-block'; document.getElementById('view-tabs').style.display='flex'; document.getElementById('sb-config').style.display='flex'; document.getElementById('sb-ferramentas').style.display='flex'; document.getElementById('sb-operacional').style.display='flex'; document.getElementById('sb-sinistros').style.display='flex'; document.getElementById('sb-whatsapp').style.display='flex'; document.getElementById('view-select').value=viewFilter; }
+
+  // Aplica permissões
+  applyUserPermissions(user);
+
   if(autoRefreshTimer) clearInterval(autoRefreshTimer);
   loadAndRender().then(()=>{
     setTimeout(()=>verificarTarefasVencendo(allLeads), 2000);
     startAutoRefresh();
   });
+}
+
+function applyUserPermissions(user){
+  const perms=user.perms||{};
+  const isAdmin=user.role==='admin';
+  // Admin vê tudo sempre
+  const show=(id,visible)=>{ const el=document.getElementById(id); if(el) el.style.display=visible?'flex':'none'; };
+  show('hdr-admin', isAdmin);
+  show('view-tabs', isAdmin);
+  show('sb-config',      isAdmin||(perms.config===true));
+  show('sb-ferramentas', isAdmin||(perms.ferramentas===true));
+  show('sb-operacional', isAdmin||(perms.operacional===true));
+  show('sb-sinistros',   isAdmin||(perms.sinistros===true));
+  show('sb-whatsapp',    isAdmin||(perms.whatsapp===true));
+  if(document.getElementById('view-select')) document.getElementById('view-select').value=viewFilter;
 }
 
 function startAutoRefresh(){
@@ -2351,6 +2401,7 @@ function renderConfig(){
 
   const sections=[
     {id:'produtos',    icon:'ti-package',  title:'Produtos',             sub:'Gerencie produtos padrão e personalizados', fn:renderProdutos},
+    {id:'usuarios',    icon:'ti-users',     title:'Usuários',             sub:'Gerenciar usuários, e-mails e permissões de acesso', fn:renderUsuarios},
     {id:'tags',        icon:'ti-tag',       title:'Tags',                 sub:'Crie e organize tags de categorização',    fn:renderTags},
     {id:'checklists',  icon:'ti-checkbox',  title:'Checklists Prontos',   sub:'Templates de checklist para o Operacional', fn:renderChecklistTemplates},
     {id:'sinistros',   icon:'ti-shield-exclamation', title:'Configurações de Sinistro', sub:'Tipos de seguro e configurações do módulo Sinistros', fn:renderSnConfig},
@@ -3793,6 +3844,161 @@ document.addEventListener('DOMContentLoaded',()=>{
     updateThemeBtn();
   });
 });
+
+function renderUsuarios(body){
+  body.id='cfg-users-body'; _renderUsuarios();
+}
+
+function _renderUsuarios(){
+  const body=document.getElementById('cfg-users-body'); if(!body) return;
+  body.innerHTML='';
+  const MENUS=[
+    {key:'pipeline',    label:'Pipeline'},
+    {key:'operacional', label:'Operacional'},
+    {key:'sinistros',   label:'Sinistros'},
+    {key:'whatsapp',    label:'WhatsApp'},
+    {key:'faturamento', label:'Dashboard'},
+    {key:'ferramentas', label:'Ferramentas IA'},
+    {key:'config',      label:'Configurações'},
+  ];
+  const USER_COLORS=['#2563EB','#059669','#D97706','#7C3AED','#DC2626','#0891B2','#DB2777','#65A30D'];
+
+  // Lista usuários existentes
+  Object.entries(USERS).forEach(([key,user],ui)=>{
+    const card=document.createElement('div');
+    card.style.cssText='border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;margin-bottom:12px;background:var(--surface);';
+
+    // Header do card de usuário
+    const hdr=document.createElement('div'); hdr.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:12px;';
+    const av=document.createElement('div'); av.style.cssText=`width:38px;height:38px;border-radius:50%;background:${user.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;`; av.textContent=user.init||user.name[0].toUpperCase();
+    const info=document.createElement('div'); info.style.flex='1';
+    const nm=el('div'); nm.style.cssText='font-size:14px;font-weight:600;color:var(--text1);'; nm.textContent=user.name;
+    const em=el('div'); em.style.cssText='font-size:12px;color:var(--text3);'; em.textContent=user.email||'';
+    const badge=el('div'); badge.style.cssText=`display:inline-block;font-size:10px;font-weight:600;padding:1px 8px;border-radius:999px;background:${user.role==='admin'?'#EFF6FF':'#F0FDF4'};color:${user.role==='admin'?'#1D4ED8':'#15803D'};margin-top:2px;`; badge.textContent=user.role==='admin'?'Admin':'Usuário';
+    info.appendChild(nm); info.appendChild(em); info.appendChild(badge);
+
+    // Botão editar
+    const editBtn=document.createElement('button'); editBtn.style.cssText='border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;'; editBtn.innerHTML='<i class="ti ti-pencil"></i>';
+    editBtn.addEventListener('click',()=>openEditUser(key, user));
+
+    // Botão excluir (não pode excluir admin)
+    if(key!=='admin'){
+      const delBtn=document.createElement('button'); delBtn.style.cssText='border:none;background:transparent;color:#DC2626;cursor:pointer;font-size:18px;padding:4px;'; delBtn.innerHTML='<i class="ti ti-trash"></i>';
+      delBtn.addEventListener('click',()=>{
+        if(!confirm(`Excluir usuário "${user.name}"?`)) return;
+        delete USERS[key]; apiSave(); _renderUsuarios(); showToast('Usuário excluído.');
+      });
+      hdr.appendChild(av); hdr.appendChild(info); hdr.appendChild(editBtn); hdr.appendChild(delBtn);
+    } else {
+      hdr.appendChild(av); hdr.appendChild(info); hdr.appendChild(editBtn);
+    }
+    card.appendChild(hdr);
+
+    // Permissões
+    const permWrap=document.createElement('div'); permWrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+    MENUS.forEach(m=>{
+      const perms=user.perms||{}; const isAdmin=user.role==='admin';
+      const on=isAdmin||perms[m.key]===true;
+      const pill=document.createElement('div');
+      pill.style.cssText=`display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;border:1px solid ${on?'var(--blue)':'var(--border)'};background:${on?'#EFF6FF':'transparent'};color:${on?'var(--blue)':'var(--text4)'};${isAdmin?'opacity:.6;':'cursor:pointer;'}`;
+      const dot=el('span'); dot.style.cssText=`width:6px;height:6px;border-radius:50%;background:${on?'var(--blue)':'var(--border)'};`;
+      pill.appendChild(dot); pill.appendChild(document.createTextNode(m.label));
+      if(!isAdmin){
+        pill.addEventListener('click',()=>{
+          USERS[key].perms=USERS[key].perms||{};
+          USERS[key].perms[m.key]=!USERS[key].perms[m.key];
+          apiSave(); _renderUsuarios();
+        });
+      }
+      permWrap.appendChild(pill);
+    });
+    card.appendChild(permWrap); body.appendChild(card);
+  });
+
+  // Botão novo usuário
+  const addBtn=document.createElement('button');
+  addBtn.style.cssText='display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:4px;';
+  addBtn.innerHTML='<i class="ti ti-user-plus"></i> Novo Usuário';
+  addBtn.addEventListener('click',()=>openEditUser(null, null));
+  body.appendChild(addBtn);
+}
+
+function openEditUser(key, user){
+  // Modal de edição/criação de usuário
+  const isNew=!key;
+  const USER_COLORS=['#2563EB','#059669','#D97706','#7C3AED','#DC2626','#0891B2','#DB2777','#65A30D'];
+  const overlay=document.createElement('div'); overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:600;';
+  const modal=document.createElement('div'); modal.style.cssText='background:var(--surface);border-radius:14px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;';
+
+  const hdr=document.createElement('div'); hdr.style.cssText='padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;';
+  const title=el('div'); title.style.cssText='font-size:16px;font-weight:600;color:var(--text1);'; title.textContent=isNew?'Novo Usuário':'Editar Usuário';
+  const closeX=el('button'); closeX.style.cssText='border:none;background:transparent;cursor:pointer;font-size:20px;color:var(--text3);'; closeX.innerHTML='<i class="ti ti-x"></i>'; closeX.addEventListener('click',()=>overlay.remove());
+  hdr.appendChild(title); hdr.appendChild(closeX); modal.appendChild(hdr);
+
+  const bd=document.createElement('div'); bd.style.cssText='padding:1.25rem;display:flex;flex-direction:column;gap:12px;';
+  const inpStyle='width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;box-sizing:border-box;';
+
+  const mkField=(lbl,type,val,ph)=>{
+    const w=document.createElement('div'); w.appendChild(el('div','lbl',lbl));
+    const inp=document.createElement('input'); inp.type=type; inp.value=val||''; inp.placeholder=ph||''; inp.style.cssText=inpStyle;
+    w.appendChild(inp); bd.appendChild(w); return inp;
+  };
+
+  const nmInp=mkField('Nome completo','text',user?.name,'Ex: João Silva');
+  const usrInp=mkField('Usuário (para @menção)','text',user?.username||key,'Ex: joao');
+  const emInp=mkField('E-mail','email',user?.email,'Ex: joao@empresa.com');
+  const passInp=mkField(isNew?'Senha':'Nova senha (deixe em branco para manter)','password','',isNew?'Mínimo 6 caracteres':'');
+
+  // Cor
+  bd.appendChild(el('div','lbl','Cor do avatar'));
+  const clWrap=document.createElement('div'); clWrap.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
+  let selColor=user?.color||USER_COLORS[0];
+  USER_COLORS.forEach(c=>{ const d=document.createElement('div'); d.style.cssText=`width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${c===selColor?'var(--text1)':'transparent'};transition:border-color .1s;`; d.addEventListener('click',()=>{ selColor=c; clWrap.querySelectorAll('div').forEach((x,i)=>x.style.borderColor=USER_COLORS[i]===selColor?'var(--text1)':'transparent'); }); clWrap.appendChild(d); });
+  bd.appendChild(clWrap);
+
+  // Role
+  bd.appendChild(el('div','lbl','Tipo de acesso'));
+  const roleWrap=document.createElement('div'); roleWrap.style.cssText='display:flex;gap:8px;';
+  let selRole=user?.role||'user';
+  ['admin','user'].forEach(r=>{ const btn=document.createElement('button'); const isSelR=r===selRole; btn.style.cssText=`padding:6px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:2px solid ${isSelR?'var(--blue)':'var(--border)'};background:${isSelR?'#EFF6FF':'transparent'};color:${isSelR?'var(--blue)':'var(--text3)'};`; btn.textContent=r==='admin'?'Admin':'Usuário';
+    btn.addEventListener('click',()=>{ selRole=r; roleWrap.querySelectorAll('button').forEach((b,i)=>{ const rr=['admin','user'][i]; b.style.borderColor=rr===selRole?'var(--blue)':'var(--border)'; b.style.background=rr===selRole?'#EFF6FF':'transparent'; b.style.color=rr===selRole?'var(--blue)':'var(--text3)'; }); });
+    roleWrap.appendChild(btn); });
+  bd.appendChild(roleWrap);
+
+  modal.appendChild(bd);
+
+  const ft=document.createElement('div'); ft.style.cssText='padding:.875rem 1.4rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;';
+  const canB=document.createElement('button'); canB.style.cssText='padding:7px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;font-family:\'DM Sans\',sans-serif;'; canB.textContent='Cancelar'; canB.addEventListener('click',()=>overlay.remove());
+  const savB=document.createElement('button'); savB.style.cssText='padding:7px 18px;border:none;border-radius:8px;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;'; savB.textContent='Salvar';
+  savB.addEventListener('click',()=>{
+    const name=nmInp.value.trim(); const username=usrInp.value.trim().toLowerCase(); const email=emInp.value.trim().toLowerCase(); const pass=passInp.value;
+    if(!name||!username||!email){ showToast('Preencha nome, usuário e e-mail.'); return; }
+    if(isNew&&!pass){ showToast('Informe uma senha.'); return; }
+    if(pass&&pass.length<6){ showToast('Senha mínima de 6 caracteres.'); return; }
+    if(email&&!email.includes('@')){ showToast('E-mail inválido.'); return; }
+    // Verifica duplicidade de username (exceto o próprio)
+    const dupKey=Object.keys(USERS).find(k=>k!==key&&(USERS[k].username===username||USERS[k].email===email));
+    if(dupKey){ showToast('Usuário ou e-mail já cadastrado.'); return; }
+    const newKey=isNew?username:key;
+    const existing=isNew?{}:{...user};
+    USERS[newKey]={
+      ...existing,
+      name, username, email,
+      pass:pass||existing.pass,
+      role:selRole,
+      color:selColor,
+      bg:selColor+'22',
+      init:name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(),
+      perms:existing.perms||{pipeline:true,faturamento:true}
+    };
+    if(!isNew&&key!==newKey){ delete USERS[key]; }
+    overlay.remove(); apiSave(); _renderUsuarios(); showToast(isNew?'Usuário criado!':'Usuário atualizado!');
+  });
+  ft.appendChild(canB); ft.appendChild(savB); modal.appendChild(ft);
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  nmInp.focus();
+}
 
 function renderTags(body){
   body.appendChild(el('div','sec-lbl','Tags cadastradas'));
