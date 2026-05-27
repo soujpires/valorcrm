@@ -3512,18 +3512,80 @@ function openSnCard(cardId, defaultColId){
 
   const toolbar=document.createElement('div');
   toolbar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:.65rem 1.4rem;border-bottom:1px solid var(--border);background:var(--bg2);';
+
+  // Etapa com label
+  const etapaWrap=document.createElement('div'); etapaWrap.style.cssText='display:flex;flex-direction:column;gap:2px;';
+  const etapaLbl=el('span'); etapaLbl.style.cssText='font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.05em;'; etapaLbl.textContent='Etapa:';
   const colSel=document.createElement('select'); colSel.style.cssText=selStyle;
   sn.columns.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; if(c.id===card.colId) o.selected=true; colSel.appendChild(o); });
   colSel.addEventListener('change',()=>card.colId=colSel.value);
+  etapaWrap.appendChild(etapaLbl); etapaWrap.appendChild(colSel); toolbar.appendChild(etapaWrap);
+
+  // Tipo com label
+  const tipoWrap=document.createElement('div'); tipoWrap.style.cssText='display:flex;flex-direction:column;gap:2px;';
+  const tipoLbl=el('span'); tipoLbl.style.cssText='font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.05em;'; tipoLbl.textContent='Tipo:';
   const tipoSel=document.createElement('select'); tipoSel.style.cssText=selStyle;
   SN_TIPOS_ATENDIMENTO.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; if(t===card.tipo) o.selected=true; tipoSel.appendChild(o); });
   tipoSel.addEventListener('change',()=>card.tipo=tipoSel.value);
-  toolbar.appendChild(colSel); toolbar.appendChild(tipoSel);
+  tipoWrap.appendChild(tipoLbl); tipoWrap.appendChild(tipoSel); toolbar.appendChild(tipoWrap);
+
+  // Botão + Membros (dropdown)
+  const membBtn=document.createElement('button');
+  membBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:14px;position:relative;';
+  const updateMembBtn=()=>{
+    const sel=card.membros||[];
+    if(sel.length===0){ membBtn.innerHTML='<i class="ti ti-user-plus" style="font-size:13px;"></i> Membros'; }
+    else {
+      membBtn.innerHTML=''; const avRow=document.createElement('div'); avRow.style.cssText='display:flex;gap:-4px;';
+      sel.forEach(k=>{ const u=USERS[k]; if(!u) return; const av=el('span'); av.style.cssText=`width:20px;height:20px;border-radius:50%;background:${u.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:2px solid var(--surface);margin-right:-4px;`; av.textContent=u.init; avRow.appendChild(av); });
+      membBtn.appendChild(avRow);
+      const cnt=el('span'); cnt.style.cssText='font-size:12px;color:var(--text2);margin-left:6px;'; cnt.textContent=`${sel.length} membro${sel.length>1?'s':''}`;
+      membBtn.appendChild(cnt);
+    }
+  };
+  updateMembBtn();
+  membBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.sn-memb-dd').forEach(d=>d.remove());
+    const dd=document.createElement('div'); dd.className='sn-memb-dd';
+    dd.style.cssText='position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px var(--shadow);z-index:500;min-width:180px;padding:6px 0;';
+    const rect=membBtn.getBoundingClientRect(); dd.style.top=(rect.bottom+4)+'px'; dd.style.left=rect.left+'px';
+    Object.entries(USERS).forEach(([key,u])=>{
+      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;';
+      row.addEventListener('mouseenter',()=>row.style.background='var(--bg2)');
+      row.addEventListener('mouseleave',()=>row.style.background='transparent');
+      const av=el('span'); av.style.cssText=`width:24px;height:24px;border-radius:50%;background:${u.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;`; av.textContent=u.init;
+      const nm=el('span'); nm.style.cssText='font-size:13px;color:var(--text1);flex:1;'; nm.textContent=u.name;
+      const isSelected=(card.membros||[]).includes(key);
+      const chk=el('span'); chk.innerHTML=isSelected?'<i class="ti ti-check" style="font-size:14px;color:var(--blue);"></i>':'';
+      row.appendChild(av); row.appendChild(nm); row.appendChild(chk);
+      row.addEventListener('click',()=>{
+        card.membros=card.membros||[]; const idx=card.membros.indexOf(key);
+        if(idx>=0) card.membros.splice(idx,1); else card.membros.push(key);
+        chk.innerHTML=card.membros.includes(key)?'<i class="ti ti-check" style="font-size:14px;color:var(--blue);"></i>':'';
+        updateMembBtn();
+      });
+      dd.appendChild(row);
+    });
+    document.body.appendChild(dd);
+    setTimeout(()=>document.addEventListener('click',()=>dd.remove(),{once:true}),10);
+  });
+  toolbar.appendChild(membBtn);
+
+  // Próximo Follow Up na toolbar
+  const fuToolWrap=document.createElement('div'); fuToolWrap.style.cssText='display:flex;flex-direction:column;gap:2px;margin-top:0;';
+  const fuToolLbl=el('span'); fuToolLbl.style.cssText='font-size:10px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.05em;'; fuToolLbl.textContent='Follow Up:';
+  const fuInpDate=document.createElement('input'); fuInpDate.type='date'; fuInpDate.value=card.proximoFollowUp||''; fuInpDate.style.cssText=selStyle;
+  fuInpDate.addEventListener('change',()=>card.proximoFollowUp=fuInpDate.value);
+  fuToolWrap.appendChild(fuToolLbl); fuToolWrap.appendChild(fuInpDate); toolbar.appendChild(fuToolWrap);
+
+  const sep=document.createElement('div'); sep.style.cssText='flex:1;';
+  toolbar.appendChild(sep);
+
   if(!card._isNew){
-    const sep=document.createElement('div'); sep.style.cssText='flex:1;';
-    const delBtn=document.createElement('button'); delBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid #FCA5A5;border-radius:8px;background:transparent;color:#DC2626;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;'; delBtn.innerHTML='<i class="ti ti-trash" style="font-size:13px;"></i>Excluir';
+    const delBtn=document.createElement('button'); delBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid #FCA5A5;border-radius:8px;background:transparent;color:#DC2626;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:14px;'; delBtn.innerHTML='<i class="ti ti-trash" style="font-size:13px;"></i>Excluir';
     delBtn.addEventListener('click',()=>{ if(!confirm('Excluir?')) return; sn.cards=sn.cards.filter(c=>c.id!==card.id); overlay.style.display='none'; saveSnData(); renderSnBoard(); });
-    toolbar.appendChild(sep); toolbar.appendChild(delBtn);
+    toolbar.appendChild(delBtn);
   }
   modal.appendChild(toolbar);
 
@@ -3542,30 +3604,8 @@ function openSnCard(cardId, defaultColId){
 
   left.appendChild(el('div','sec-lbl','<i class="ti ti-align-left" style="font-size:13px;"></i> Relato'));
   const relatoTA=document.createElement('textarea'); relatoTA.value=card.relato||''; relatoTA.placeholder='Descreva o ocorrido...';
-  relatoTA.style.cssText='width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;line-height:1.5;';
+  relatoTA.style.cssText='width:100%;min-height:120px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;line-height:1.5;';
   relatoTA.addEventListener('input',()=>card.relato=relatoTA.value); left.appendChild(relatoTA);
-
-  const fuWrap=document.createElement('div'); fuWrap.appendChild(el('div','lbl','Próximo Follow Up (cria tarefa)'));
-  const fuInpDate=document.createElement('input'); fuInpDate.type='date'; fuInpDate.value=card.proximoFollowUp||''; fuInpDate.style.cssText=inpStyle;
-  fuInpDate.addEventListener('change',()=>card.proximoFollowUp=fuInpDate.value); fuWrap.appendChild(fuInpDate); left.appendChild(fuWrap);
-
-  left.appendChild(el('div','lbl','Membros'));
-  const membrosWrap=document.createElement('div'); membrosWrap.style.cssText='display:flex;gap:8px;flex-wrap:wrap;';
-  Object.entries(USERS).forEach(([key,u])=>{
-    const isSelected=(card.membros||[]).includes(key);
-    const memBtn=document.createElement('button');
-    memBtn.style.cssText=`display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;border:2px solid ${isSelected?u.color:'var(--border)'};background:${isSelected?u.color+'22':'transparent'};color:${isSelected?u.color:'var(--text3)'};`;
-    const av=el('span'); av.style.cssText=`width:18px;height:18px;border-radius:50%;background:${u.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;`; av.textContent=u.init;
-    memBtn.appendChild(av); memBtn.appendChild(document.createTextNode(u.name));
-    memBtn.addEventListener('click',()=>{
-      card.membros=card.membros||[]; const idx=card.membros.indexOf(key);
-      if(idx>=0) card.membros.splice(idx,1); else card.membros.push(key);
-      const sel=card.membros.includes(key);
-      memBtn.style.borderColor=sel?u.color:'var(--border)'; memBtn.style.background=sel?u.color+'22':'transparent'; memBtn.style.color=sel?u.color:'var(--text3)';
-    });
-    membrosWrap.appendChild(memBtn);
-  });
-  left.appendChild(membrosWrap);
 
   const right=document.createElement('div'); right.style.cssText='display:flex;flex-direction:column;padding:1rem 1.2rem;overflow-y:auto;gap:6px;';
   right.appendChild(el('div','sec-lbl','<i class="ti ti-message-dots" style="font-size:13px;"></i> Follow-up'));
