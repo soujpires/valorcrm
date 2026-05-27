@@ -215,7 +215,7 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 .sb-item{display:flex;align-items:center;gap:10px;padding:.625rem 1rem;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;border-radius:0;transition:all .12s;white-space:nowrap;border:none;background:transparent;width:100%;font-family:'DM Sans',sans-serif;}
 .sb-item:hover{background:var(--bg2);color:var(--text2);}
 .sb-item.active{background:var(--blue-light);color:var(--blue);font-weight:600;}
-.sb-item i{font-size:18px;flex-shrink:0;}
+.sb-item i{font-size:23px;flex-shrink:0;}
 .sb-item span{overflow:hidden;transition:opacity .15s;}
 .sidebar.collapsed .sb-item span{opacity:0;pointer-events:none;}
 .sb-badge{background:#DC2626;color:#fff;border-radius:999px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto;flex-shrink:0;}
@@ -562,7 +562,7 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
         <button class="sb-item" data-page="sinistros" id="sb-sinistros" style="display:none"><i class="ti ti-shield-exclamation"></i><span>Sinistros</span></button>
         <button class="sb-item" data-page="whatsapp" id="sb-whatsapp" style="display:none"><i class="ti ti-brand-whatsapp"></i><span>WhatsApp</span><span class="sb-badge" id="wpp-badge" style="display:none">0</span></button>
         <button class="sb-item" data-page="ferramentas" id="sb-ferramentas" style="display:none"><i class="ti ti-cpu"></i><span>Ferramentas IA</span></button>
-        <button class="sb-item" data-page="faturamento"><i class="ti ti-coin"></i><span>Faturamento</span></button>
+        <button class="sb-item" data-page="faturamento"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></button>
         <button class="sb-item" data-page="tasks"><i class="ti ti-checkbox"></i><span>Tarefas</span><span class="sb-badge" id="tasks-badge" style="display:none">0</span></button>
         <button class="sb-item" data-page="config" id="sb-config" style="display:none"><i class="ti ti-settings"></i><span>Configurações</span></button>
       </div>
@@ -847,7 +847,7 @@ document.getElementById('sidebar').addEventListener('click', e=>{
   document.getElementById('operacional-page').classList.toggle('visible',page==='operacional');
   document.getElementById('whatsapp-page').classList.toggle('visible',page==='whatsapp');
   document.getElementById('sinistros-page').classList.toggle('visible',page==='sinistros');
-  const pageTitles={pipeline:'Pipeline Comercial',tasks:'Tarefas',config:'Configurações',ferramentas:'Ferramentas IA',faturamento:'Faturamento',operacional:'Operacional',whatsapp:'WhatsApp',sinistros:'Sinistros'};
+  const pageTitles={pipeline:'Pipeline Comercial',tasks:'Tarefas',config:'Configurações',ferramentas:'Ferramentas IA',faturamento:'Dashboard',operacional:'Operacional',whatsapp:'WhatsApp',sinistros:'Sinistros'};
   document.getElementById('hdr-page').textContent=pageTitles[page]||page;
   document.getElementById('view-tabs').style.display=page==='pipeline'&&currentRole==='admin'?'flex':'none';
   document.getElementById('new-lead-btn').style.display=page==='pipeline'?'flex':'none';
@@ -2135,9 +2135,9 @@ function renderFaturamento(){
     // Summary cards
     const sg=el('div'); sg.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;';
     function smC(lbl,val,color='#111827'){ const c=el('div','mc'); c.appendChild(el('div','mlbl',lbl)); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); return c; }
-    sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:13px;"></i> Negócios',String(won.length)));
-    sg.appendChild(smC('<i class="ti ti-coin" style="font-size:13px;"></i> Prêmio Total',fmt(totalPremio),'#2563EB'));
-    sg.appendChild(smC('<i class="ti ti-arrow-fork" style="font-size:13px;"></i> Meu Repasse',fmt(totalRepVend),'#059669'));
+    sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:17px;"></i> Negócios',String(won.length)));
+    sg.appendChild(smC('<i class="ti ti-coin" style="font-size:17px;"></i> Prêmio Total',fmt(totalPremio),'#2563EB'));
+    sg.appendChild(smC('<i class="ti ti-arrow-fork" style="font-size:17px;"></i> Meu Repasse',fmt(totalRepVend),'#059669'));
     body.appendChild(sg);
 
     // Table
@@ -2194,15 +2194,15 @@ function renderFaturamento(){
     // Summary cards
     const sg=el('div'); sg.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;';
     function smC(lbl,val,sub,color='#111827'){ const c=el('div','mc'); const lb=el('div','mlbl'); lb.innerHTML=lbl; c.appendChild(lb); const v=el('div','mval',val); v.style.color=color; c.appendChild(v); if(sub) c.appendChild(el('div','msub',sub)); return c; }
-    sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:13px;"></i> Negócios Fechados',String(won.length),'ganhos no período'));
-    sg.appendChild(smC('<i class="ti ti-coin" style="font-size:13px;"></i> Prêmio Líquido',fmt(totalPremio),'valor total vendido','#2563EB'));
-    sg.appendChild(smC('<i class="ti ti-chart-bar" style="font-size:13px;"></i> Comissão Total',fmt(totalComm),'gerada no período','#059669'));
+    sg.appendChild(smC('<i class="ti ti-trophy" style="color:#059669;font-size:17px;"></i> Negócios Fechados',String(won.length),'ganhos no período'));
+    sg.appendChild(smC('<i class="ti ti-coin" style="font-size:17px;"></i> Prêmio Líquido',fmt(totalPremio),'valor total vendido','#2563EB'));
+    sg.appendChild(smC('<i class="ti ti-chart-bar" style="font-size:17px;"></i> Comissão Total',fmt(totalComm),'gerada no período','#059669'));
     body.appendChild(sg);
 
     const sg2=el('div'); sg2.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem;';
-    sg2.appendChild(smC('<i class="ti ti-building-bank" style="font-size:13px;"></i> Comissão Líquida',fmt(commLiq),'corretora (líquida)','#1E40AF'));
-    sg2.appendChild(smC('<i class="ti ti-user" style="font-size:13px;"></i> Repasse Vendedor',fmt(totalRepVend),'total vendedores','#7C3AED'));
-    sg2.appendChild(smC('<i class="ti ti-users" style="font-size:13px;"></i> Repasse Produtor',fmt(totalRepProd),'total parceiros','#D97706'));
+    sg2.appendChild(smC('<i class="ti ti-building-bank" style="font-size:17px;"></i> Comissão Líquida',fmt(commLiq),'corretora (líquida)','#1E40AF'));
+    sg2.appendChild(smC('<i class="ti ti-user" style="font-size:17px;"></i> Repasse Vendedor',fmt(totalRepVend),'total vendedores','#7C3AED'));
+    sg2.appendChild(smC('<i class="ti ti-users" style="font-size:17px;"></i> Repasse Produtor',fmt(totalRepProd),'total parceiros','#D97706'));
     body.appendChild(sg2);
 
     // Table
@@ -3579,8 +3579,13 @@ function openSnCard(cardId, defaultColId){
   fuInpDate.addEventListener('change',()=>card.proximoFollowUp=fuInpDate.value);
   fuToolWrap.appendChild(fuToolLbl); fuToolWrap.appendChild(fuInpDate); toolbar.appendChild(fuToolWrap);
 
+  // Importar Checklist (igual ao Operacional)
+  const snImportBtn=document.createElement('button');
+  snImportBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:14px;';
+  snImportBtn.innerHTML='<i class="ti ti-clipboard-list" style="font-size:13px;"></i>Importar Checklist';
+
   const sep=document.createElement('div'); sep.style.cssText='flex:1;';
-  toolbar.appendChild(sep);
+  toolbar.appendChild(snImportBtn); toolbar.appendChild(sep);
 
   if(!card._isNew){
     const delBtn=document.createElement('button'); delBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid #FCA5A5;border-radius:8px;background:transparent;color:#DC2626;font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;margin-top:14px;'; delBtn.innerHTML='<i class="ti ti-trash" style="font-size:13px;"></i>Excluir';
@@ -3606,6 +3611,72 @@ function openSnCard(cardId, defaultColId){
   const relatoTA=document.createElement('textarea'); relatoTA.value=card.relato||''; relatoTA.placeholder='Descreva o ocorrido...';
   relatoTA.style.cssText='width:100%;min-height:120px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);resize:vertical;outline:none;line-height:1.5;';
   relatoTA.addEventListener('input',()=>card.relato=relatoTA.value); left.appendChild(relatoTA);
+
+  // Checklist (igual ao Operacional)
+  if(!card.checklist) card.checklist=[];
+  if(!card.checklists) card.checklists=[];
+  const snClSection=document.createElement('div'); left.appendChild(snClSection);
+  function renderSnChecklistSection(){
+    snClSection.innerHTML='';
+    const hasGroups=card.checklists&&card.checklists.length>0;
+    const hasManual=card.checklist&&card.checklist.filter(i=>i.text||i._editing).length>0;
+    if(!hasGroups&&!hasManual){
+      const addOnlyBtn=document.createElement('button');
+      addOnlyBtn.style.cssText='display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+      addOnlyBtn.innerHTML='<i class="ti ti-plus" style="font-size:13px;"></i> Adicionar checklist';
+      addOnlyBtn.addEventListener('click',()=>{ card.checklist.push({text:'',done:false,_editing:true}); renderSnChecklistSection(); });
+      snClSection.appendChild(addOnlyBtn); return;
+    }
+    if(hasGroups){ card.checklists.forEach((grp,gi)=>{
+      const grpDone=grp.items.filter(i=>i.done).length; const grpTotal=grp.items.length;
+      const gh=document.createElement('div'); gh.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;margin-top:8px;';
+      const gt=el('div','sec-lbl',`<i class="ti ti-checkbox" style="font-size:12px;"></i> ${grp.name}`); gt.style.margin='0;flex:1;';
+      const gp=el('div'); gp.style.cssText='font-size:11px;color:var(--text4);font-weight:600;'; gp.textContent=`${grpDone}/${grpTotal}`;
+      const gd=el('button'); gd.style.cssText='border:none;background:transparent;color:var(--text4);cursor:pointer;font-size:12px;'; gd.innerHTML='<i class="ti ti-x"></i>';
+      gd.addEventListener('click',()=>{ card.checklists.splice(gi,1); renderSnChecklistSection(); });
+      gh.appendChild(gt); gh.appendChild(gp); gh.appendChild(gd); snClSection.appendChild(gh);
+      if(grpTotal>0){ const bar=document.createElement('div'); bar.style.cssText='height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px;'; const fill=document.createElement('div'); fill.style.cssText=`height:100%;background:#059669;border-radius:2px;width:${grpTotal>0?Math.round(grpDone/grpTotal*100):0}%;`; bar.appendChild(fill); snClSection.appendChild(bar); }
+      grp.items.forEach((item,ii)=>{
+        const row=document.createElement('div'); row.className='op-checklist-item';
+        const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
+        cb.addEventListener('change',()=>{ card.checklists[gi].items[ii].done=cb.checked; renderSnChecklistSection(); });
+        const txt=document.createElement('span'); txt.className='op-check-txt'+(item.done?' done':''); txt.textContent=item.text;
+        const del=document.createElement('button'); del.className='op-check-del'; del.innerHTML='<i class="ti ti-x"></i>';
+        del.addEventListener('click',()=>{ card.checklists[gi].items.splice(ii,1); renderSnChecklistSection(); });
+        row.appendChild(cb); row.appendChild(txt); row.appendChild(del); snClSection.appendChild(row);
+      });
+    }); }
+    (card.checklist||[]).forEach((item,i)=>{
+      if(item._editing){
+        const row=document.createElement('div'); row.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
+        const editInp=document.createElement('input'); editInp.value=item.text; editInp.placeholder='Nome do item...';
+        editInp.style.cssText='flex:1;border:1px solid var(--blue);border-radius:6px;padding:6px 9px;font-size:12px;font-family:\'DM Sans\',sans-serif;color:var(--text1);background:var(--input-bg);outline:none;';
+        const okBtn=document.createElement('button'); okBtn.style.cssText='background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:\'DM Sans\',sans-serif;'; okBtn.textContent='OK';
+        const confirmItem=()=>{ const v=editInp.value.trim(); if(v){ card.checklist[i].text=v; delete card.checklist[i]._editing; } else card.checklist.splice(i,1); renderSnChecklistSection(); };
+        okBtn.addEventListener('click',confirmItem);
+        editInp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); confirmItem(); } if(e.key==='Escape'){ if(!item.text) card.checklist.splice(i,1); else delete card.checklist[i]._editing; renderSnChecklistSection(); } });
+        row.appendChild(editInp); row.appendChild(okBtn); snClSection.appendChild(row);
+        setTimeout(()=>editInp.focus(),0); return;
+      }
+      if(!item.text) return;
+      const row=document.createElement('div'); row.className='op-checklist-item';
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.className='op-check-cb'; cb.checked=item.done;
+      cb.addEventListener('change',()=>{ card.checklist[i].done=cb.checked; renderSnChecklistSection(); });
+      const txt=document.createElement('span'); txt.className='op-check-txt'+(item.done?' done':''); txt.textContent=item.text;
+      txt.addEventListener('click',()=>{ card.checklist[i]._editing=true; renderSnChecklistSection(); });
+      const del=document.createElement('button'); del.className='op-check-del'; del.innerHTML='<i class="ti ti-x"></i>';
+      del.addEventListener('click',()=>{ card.checklist.splice(i,1); renderSnChecklistSection(); });
+      row.appendChild(cb); row.appendChild(txt); row.appendChild(del); snClSection.appendChild(row);
+    });
+    const addBtn=document.createElement('button'); addBtn.style.cssText='display:flex;align-items:center;gap:5px;margin-top:6px;padding:4px 8px;border:none;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;font-family:\'DM Sans\',sans-serif;';
+    addBtn.innerHTML='<i class="ti ti-plus" style="font-size:12px;"></i> Adicionar item';
+    addBtn.addEventListener('click',()=>{ card.checklist=card.checklist||[]; card.checklist.push({text:'',done:false,_editing:true}); renderSnChecklistSection(); });
+    snClSection.appendChild(addBtn);
+  }
+  renderSnChecklistSection();
+
+  // Wire import button
+  snImportBtn.addEventListener('click',()=>openImportChecklist(card, renderSnChecklistSection));
 
   const right=document.createElement('div'); right.style.cssText='display:flex;flex-direction:column;padding:1rem 1.2rem;overflow-y:auto;gap:6px;';
   right.appendChild(el('div','sec-lbl','<i class="ti ti-message-dots" style="font-size:13px;"></i> Follow-up'));
