@@ -4,7 +4,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232563EB'/%3E%3Cpath d='M50 15 L20 28 L20 52 C20 68 34 80 50 85 C66 80 80 68 80 52 L80 28 Z' fill='white' opacity='.9'/%3E%3Cpolyline points='38,48 50,62 62,48' fill='none' stroke='%232563EB' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cline x1='50' y1='62' x2='50' y2='70' stroke='%232563EB' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexur CRM</title>
+<title>Valor CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
@@ -708,13 +708,15 @@ html.dark .wpp-bubble-doc{background:rgba(255,255,255,.07);}
 
 <script>
 'use strict';
-const CF_WORKER = 'https://SEU-WORKER.workers.dev'; // Configure seu Cloudflare Worker aqui
+const CF_WORKER = 'https://valorcrm-api.valor-corretora.workers.dev';
 
 // Usuários dinâmicos — carregados do Worker. USERS é preenchido após apiLoad.
 // Usuários padrão (fallback se Worker não tiver ainda)
 const DEFAULT_USERS = {
-  nexur: { email:'nexur@nexur.com', pass:'nexur', name:'Nexur', username:'nexur', role:'admin', color:'#2563EB', bg:'#EFF6FF', init:'N',
+  admin:    { email:'admin@somosvalor.com', pass:'nexur2025', name:'Admin',    username:'admin',    role:'admin', color:'#2563EB', bg:'#EFF6FF', init:'A',
     perms:{pipeline:true,operacional:true,sinistros:true,whatsapp:true,faturamento:true,ferramentas:true,config:true} },
+  nalberty: { email:'nalberty@somosvalor.com', pass:'nal2025', name:'Nalberty', username:'nalberty', role:'user', color:'#059669', bg:'#ECFDF5', init:'N',
+    perms:{pipeline:true,operacional:false,sinistros:false,whatsapp:false,faturamento:true,ferramentas:false,config:false} },
 };
 let USERS = {...DEFAULT_USERS};
 const DEF_COLS = [
@@ -2368,7 +2370,7 @@ function buildPDF(title, subtitle, data){
     +'td{padding:5px 7px;border-bottom:1px solid var(--border2);font-size:8.5px;}'
     +'.footer{margin-top:14px;font-size:7px;color:var(--text4);border-top:1px solid var(--border);padding-top:6px;display:flex;justify-content:space-between;}'
     +'</style></head><body>'
-    +'<div class="hdr"><div><div class="brand">Nexur CRM</div><h1>'+title+'</h1><div class="sub">'+(subtitle?'Período: '+subtitle:'')+'</div></div><div class="date">Gerado em '+dateNow+' às '+timeNow+'</div></div>'
+    +'<div class="hdr"><div><div class="brand">Valor CRM</div><h1>'+title+'</h1><div class="sub">'+(subtitle?'Período: '+subtitle:'')+'</div></div><div class="date">Gerado em '+dateNow+' às '+timeNow+'</div></div>'
     +'<div class="cards">'
     +'<div class="card"><div class="card-lbl">Negócios Ganhos</div><div class="card-val">'+won.length+'</div></div>'
     +'<div class="card"><div class="card-lbl">Prêmio Total</div><div class="card-val" style="color:var(--blue)">'+fmt(totalPremio)+'</div></div>'
@@ -2385,7 +2387,7 @@ function buildPDF(title, subtitle, data){
     +'<table><thead><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Prêmio</th><th>Comissão</th><th>Rep. Vendedor</th><th>Rep. Produtor</th><th>Liq. Corretora</th><th>Resp.</th></tr></thead><tbody>'+wonRows+'</tbody></table>'
     +'<div class="section">Negócios Perdidos</div>'
     +'<table><thead><tr><th>Data</th><th>Cliente</th><th>Produto</th><th>Valor</th></tr></thead><tbody>'+lostRows+'</tbody></table>'
-    +'<div class="footer"><span>Nexur CRM • Documento gerado automaticamente</span><span>'+dateNow+'</span></div>'
+    +'<div class="footer"><span>Valor CRM • Documento gerado automaticamente</span><span>'+dateNow+'</span></div>'
     +'<scr'+'ipt>window.onload=()=>{window.print();}<'+'/scr'+'ipt>'
     +'</body></html>');
   w.document.close();
@@ -3167,9 +3169,9 @@ document.getElementById('new-op-task-btn').addEventListener('click',()=>{
 // ── WHATSAPP ──
 // ══════════════════════════════════════════════
 
-const WPP_API   = 'https://SEU-VPS:8080'; // Configure seu servidor Evolution API
-const WPP_KEY   = 'SUA-API-KEY';
-const WPP_INST  = 'SUA-INSTANCIA';
+const WPP_API   = 'https://api.somosvalor.com';
+const WPP_KEY   = 'valorcrm2025';
+const WPP_INST  = 'Valor-CRM';
 const WPP_HEADS = {'Content-Type':'application/json','apikey':WPP_KEY};
 
 let wppCurrentChat=null, wppChats=[], wppMsgCache={}, wppPollTimer=null, wppStatusTimer=null;
